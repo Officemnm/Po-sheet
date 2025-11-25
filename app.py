@@ -15,10 +15,10 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (সরাসরি কোডের ভেতরে)
+#  HTML & CSS TEMPLATES
 # ==========================================
 
-# ১. আপলোড পেজের ডিজাইন
+# ১. আপলোড পেজের ডিজাইন (অপরিবর্তিত)
 INDEX_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -66,42 +66,65 @@ INDEX_HTML = """
 </html>
 """
 
-# ২. রেজাল্ট পেজের ডিজাইন
+# ২. রেজাল্ট পেজের ডিজাইন (প্রিন্ট স্টাইল সহ)
 RESULT_HTML = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Result</title>
+    <title>Purchase Order Report</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; padding: 30px 0; }
+        body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-back { border-radius: 50px; padding: 8px 25px; font-weight: 600; }
+        .btn-action { border-radius: 50px; padding: 8px 25px; font-weight: 600; }
         .table-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; overflow: hidden; border: none; }
-        .color-header { background-color: #2c3e50; color: white; padding: 15px 20px; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; }
-        .color-badge { background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; margin-left: 10px; font-size: 0.9rem; }
+        .color-header { background-color: #2c3e50; color: white; padding: 15px 20px; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between; }
+        .color-badge { background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; }
         .table-responsive { padding: 0; }
         .table { margin-bottom: 0; }
-        .table th { background-color: #ecf0f1; color: #2c3e50; font-weight: 600; text-align: center; border-bottom: 2px solid #bdc3c7; }
-        .table td { text-align: center; vertical-align: middle; border-color: #ecf0f1; }
+        .table th { background-color: #ecf0f1; color: #2c3e50; font-weight: 700; text-align: center; border-bottom: 2px solid #bdc3c7; vertical-align: middle; }
+        .table td { text-align: center; vertical-align: middle; border-color: #ecf0f1; padding: 12px 8px; font-weight: 500; }
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f9fbfd; }
-        .total-col { font-weight: bold; background-color: #e8f6f3 !important; color: #1abc9c; }
-        .alert-custom { border-radius: 10px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .total-col { font-weight: 800; background-color: #e8f6f3 !important; color: #16a085; }
+        
+        /* প্রিন্ট করার জন্য স্পেশাল CSS */
+        @media print {
+            body { background-color: white; padding: 0; }
+            .container { max-width: 100%; width: 100%; padding: 0; }
+            .no-print { display: none !important; } /* বাটন হাইড করার জন্য */
+            .table-card { box-shadow: none; border: 1px solid #ddd; margin-bottom: 20px; break-inside: avoid; }
+            .color-header { background-color: #f1f1f1 !important; color: black !important; border-bottom: 2px solid #000; -webkit-print-color-adjust: exact; }
+            .color-badge { border: 1px solid #000; color: black; }
+            .total-col { background-color: #f0f0f0 !important; color: black !important; -webkit-print-color-adjust: exact; }
+            a { text-decoration: none; color: black; }
+            .table th, .table td { padding: 8px; font-size: 12px; border: 1px solid #ddd; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header-section">
-            <h2 class="text-dark fw-bold">Generated Report</h2>
-            <a href="/" class="btn btn-outline-primary btn-back">← Upload New Files</a>
+        <div class="header-section no-print">
+            <div>
+                <h2 class="text-dark fw-bold mb-0">Generated Report</h2>
+                <small class="text-muted">Review the extracted data below</small>
+            </div>
+            <div class="d-flex gap-2">
+                <button onclick="window.print()" class="btn btn-success btn-action">🖨️ Print Report</button>
+                <a href="/" class="btn btn-outline-primary btn-action">Upload New</a>
+            </div>
+        </div>
+
+        <div class="d-none d-print-block text-center mb-4">
+            <h2>Purchase Order Summary</h2>
+            <p>Generated on: <span id="date"></span></p>
         </div>
 
         {% if message %}
-            <div class="alert alert-warning alert-custom p-4 text-center">
-                <h4>⚠️ No Data Found</h4>
+            <div class="alert alert-warning p-4 text-center no-print">
+                <h4>⚠️ Notice</h4>
                 <p class="mb-0">{{ message }}</p>
             </div>
         {% endif %}
@@ -110,8 +133,7 @@ RESULT_HTML = """
             {% for item in tables %}
                 <div class="table-card">
                     <div class="color-header">
-                        <span>COLOR:</span>
-                        <span class="color-badge">{{ item.color }}</span>
+                        <span>COLOR: {{ item.color }}</span>
                     </div>
                     <div class="table-responsive">
                         {{ item.table | safe }}
@@ -120,14 +142,19 @@ RESULT_HTML = """
             {% endfor %}
         {% else %}
             {% if not message %}
-                <div class="alert alert-info text-center">Processing complete but no tables generated.</div>
+                <div class="alert alert-info text-center no-print">Processing complete but no tables generated.</div>
             {% endif %}
         {% endif %}
         
-        <div class="text-center mt-5">
+        <div class="text-center mt-5 no-print">
              <p class="text-muted small">Generated by Purchase Order Parser AI</p>
         </div>
     </div>
+
+    <script>
+        // বর্তমান তারিখ দেখানোর জন্য
+        document.getElementById('date').innerText = new Date().toLocaleDateString();
+    </script>
 </body>
 </html>
 """
@@ -141,13 +168,13 @@ def is_potential_size(header):
     h = header.strip().upper()
     if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY"]:
         return False
-    # প্যাটার্ন ১: শুধু সংখ্যা (32, 34)
+    # প্যাটার্ন ১: শুধু সংখ্যা
     if re.match(r'^\d+$', h): return True
-    # প্যাটার্ন ২: সংখ্যা + A/M/Y/T (3A, 18M)
+    # প্যাটার্ন ২: সংখ্যা + A/M/Y/T
     if re.match(r'^\d+[AMYT]$', h): return True
-    # প্যাটার্ন ৩: অক্ষর সাইজ (S, M, L...)
+    # প্যাটার্ন ৩: অক্ষর সাইজ
     if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
-    # Assortment কোড বাদ (A01, B02)
+    # Assortment কোড বাদ
     if re.match(r'^[A-Z]\d{2,}$', h): return False
     return False
 
@@ -176,11 +203,21 @@ def extract_data_dynamic(file_path):
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
+        # অর্ডার নম্বর বের করা
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
-        if order_match: order_no = order_match.group(1)
+        if order_match: 
+            order_no = order_match.group(1)
         else:
             alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
-            if alt_match: order_no = alt_match.group(1)
+            if alt_match: 
+                order_no = alt_match.group(1)
+        
+        # ==========================================
+        # লজিক: Order No থেকে শেষের '00' বাদ দেওয়া
+        # ==========================================
+        order_no = str(order_no).strip()
+        if order_no.endswith("00"):
+            order_no = order_no[:-2]
 
         for page in reader.pages:
             text = page.extract_text()
