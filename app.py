@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import re
 import shutil
-from datetime import datetime
+import numpy as np
 
 app = Flask(__name__)
 
@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (PROFESSIONAL DESIGN)
+#  HTML & CSS TEMPLATES
 # ==========================================
 
 INDEX_HTML = """
@@ -83,6 +83,9 @@ RESULT_HTML = """
         .company-name { font-size: 2.5rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; }
         .report-title { font-size: 1.2rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         
+        /* Date Style Updated */
+        .date-section { font-size: 1.3rem; font-weight: 800; color: #000; margin-top: 10px; }
+        
         /* Info Boxes */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
         .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 20px; border-radius: 8px; flex: 1; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
@@ -107,6 +110,10 @@ RESULT_HTML = """
         .order-col { font-weight: bold; text-align: left !important; padding-left: 15px !important; background-color: #fdfdfd; }
         .total-col { font-weight: 800; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
 
+        /* Summary Row Styles (Actual Qty & 3%) */
+        .summary-row td { background-color: #f2f2f2 !important; font-weight: 700; border-top: 2px solid #aaa !important; }
+        .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
+
         /* Action Buttons */
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
@@ -128,6 +135,7 @@ RESULT_HTML = """
             .color-header { background-color: #f1f1f1 !important; border: 1px solid #000; border-bottom: none; }
             .table-card { border: none; margin-bottom: 20px; break-inside: avoid; }
             .total-col { background-color: #f0f0f0 !important; color: black !important; }
+            .summary-row td { background-color: #e0e0e0 !important; font-weight: 800 !important; }
         }
     </style>
 </head>
@@ -142,7 +150,7 @@ RESULT_HTML = """
         <div class="company-header">
             <div class="company-name">Cotton Clothing BD Limited</div>
             <div class="report-title">Purchase Order Summary</div>
-            <div class="text-muted small mt-1">Generated on: <span id="date"></span></div>
+            <div class="date-section">Date: <span id="date"></span></div>
         </div>
 
         {% if message %}
@@ -190,14 +198,19 @@ RESULT_HTML = """
     </div>
 
     <script>
-        document.getElementById('date').innerText = new Date().toLocaleDateString();
+        // তারিখ ফরম্যাট: DD-MM-YYYY
+        const dateObj = new Date();
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        document.getElementById('date').innerText = `${day}-${month}-${year}`;
     </script>
 </body>
 </html>
 """
 
 # ==========================================
-#  LOGIC PART (DATA EXTRACTION)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -227,34 +240,21 @@ def sort_sizes(size_list):
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
-    """প্রথম পেজ থেকে Buyer, Booking, Style বের করার লজিক"""
     meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
-    
-    # Buyer: সাধারণত "Buyer/Agent Name" এর পরে থাকে
-    # আমরা KIABI বা সাধারণ প্যাটার্ন খুঁজব
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
     else:
-        # জেনেরিক বায়ার খোঁজা
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
-        if buyer_match:
-            meta['buyer'] = buyer_match.group(1).strip()
+        if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    # Booking No
     booking_match = re.search(r"Booking NO\.?[:\s]*([\w/]+)", first_page_text, re.IGNORECASE)
-    if booking_match:
-        meta['booking'] = booking_match.group(1).strip()
+    if booking_match: meta['booking'] = booking_match.group(1).strip()
 
-    # Style Ref
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
-    if style_match:
-        meta['style'] = style_match.group(1).strip()
+    if style_match: meta['style'] = style_match.group(1).strip()
     else:
-        # বিকল্প প্যাটার্ন
         style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
-        if style_match:
-             meta['style'] = style_match.group(1).strip()
-
+        if style_match: meta['style'] = style_match.group(1).strip()
     return meta
 
 def extract_data_dynamic(file_path):
@@ -265,21 +265,16 @@ def extract_data_dynamic(file_path):
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
-        
-        # ১. মেটাডেটা এক্সট্রাক্ট করা (শুধুমাত্র ১ম পেজ থেকে)
         metadata = extract_metadata(first_page_text)
         
-        # অর্ডার নম্বর বের করা
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
         if order_match: order_no = order_match.group(1)
         else:
             alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
             if alt_match: order_no = alt_match.group(1)
         
-        # Order No ফিক্স (শেষের ০০ বাদ দেওয়া)
         order_no = str(order_no).strip()
-        if order_no.endswith("00"):
-            order_no = order_no[:-2]
+        if order_no.endswith("00"): order_no = order_no[:-2]
 
         for page in reader.pages:
             text = page.extract_text()
@@ -367,13 +362,9 @@ def index():
             if file.filename == '': continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
-            
             data, meta = extract_data_dynamic(file_path)
             all_data.extend(data)
-            
-            # প্রথম ফাইল থেকে মেটাডেটা নেওয়া হবে
-            if i == 0:
-                final_meta = meta
+            if i == 0: final_meta = meta
         
         if not all_data:
             return render_template_string(RESULT_HTML, tables=None, message="No valid data found in PDFs.")
@@ -394,36 +385,58 @@ def index():
             sorted_sizes = sort_sizes(existing_sizes)
             pivot = pivot[sorted_sizes]
             
-            # টেবিলের ডানপাশে টোটাল
+            # টোটাল কলাম
             pivot['Total'] = pivot.sum(axis=1)
-            
-            # গ্র্যান্ড টোটাল হিসাব করা
             grand_total_qty += pivot['Total'].sum()
+
+            # ==========================================
+            # ১. নতুন দুটি রো যোগ করা (Actual Qty & 3%)
+            # ==========================================
             
-            # ৪. টেবিল ফিক্স: Order No কে কলাম হিসেবে রিসেট করা
+            # সব কলামের যোগফল (Actual Qty)
+            actual_qty = pivot.sum()
+            actual_qty.name = 'Actual Qty'
+            
+            # 3% যোগফল (Actual Qty + 3%) - রাউন্ড করা
+            qty_plus_3 = (actual_qty * 1.03).round().astype(int)
+            qty_plus_3.name = '3% Order Qty'
+            
+            # ডেটাফ্রেমে রো যোগ করা
+            pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
+            
+            # Order No কলাম রিসেট
             pivot = pivot.reset_index()
-            
-            # HTML কনভার্শন (index=False যাতে বাড়তি কলাম না আসে)
-            # Order No কলামের জন্য ক্লাস যোগ করা
+            # ইনডেক্স কলামের নাম ঠিক করা ('index' থেকে 'Order No' করা)
+            pivot = pivot.rename(columns={'index': 'Order No'})
+
+            # ==========================================
+            # ২. HTML জেনারেশন ও স্টাইলিং
+            # ==========================================
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # Order No কলামকে বোল্ড করার জন্য স্টাইল হ্যাক
-            table_html = table_html.replace('<td>', '<td class="data-cell">')
-            # প্রথম কলাম (Order No) কে আলাদা ক্লাস দেওয়া
-            table_html = re.sub(r'<tr>\s*<td class="data-cell">', '<tr><td class="order-col">', table_html)
-            # শেষ কলাম (Total) কে আলাদা ক্লাস দেওয়া
-            
-            # সহজ উপায়ে টোটাল কলাম হাইলাইট করা (Regex দিয়ে শেষ td ধরা কঠিন, তাই CSS দিয়ে nth-child ধরলে ভালো, কিন্তু এখানে ডায়নামিক)
-            # তাই আমরা হেডারে 'Total' ক্লাস যোগ করি
+            # স্টাইলিং ইনজেক্ট করা
+            # Order No কলামের স্টাইল
+            table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
+            # Total হেডার স্টাইল
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col">Total</th>')
             
+            # নতুন দুটি রো (Actual Qty & 3%) হাইলাইট করা (CSS ক্লাস যোগ করা)
+            table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
+            table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
+            
+            # রো গুলোকে বোল্ড এবং কালার করার জন্য tr ট্যাগ মডিফাই
+            # (সিম্পল স্ট্রিং রিপ্লেসমেন্ট দিয়ে row ক্লাস যোগ করা কঠিন, তাই আমরা td স্টাইল দিয়েই কাজ চালিয়েছি CSS এ)
+            # CSS এ .summary-row এর বদলে এখন .summary-label এর প্যারেন্ট tr কে টার্গেট করা যাবে না সহজে CSS এ (has ছাড়া)।
+            # তাই আমরা সরাসরি রিপ্লেস করে ক্লাস বসিয়ে দেব।
+            table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
+
             final_tables.append({'color': color, 'table': table_html})
             
         return render_template_string(RESULT_HTML, 
                                       tables=final_tables, 
                                       meta=final_meta, 
-                                      grand_total=f"{grand_total_qty:,}") # কমা দিয়ে ফরম্যাট (Example: 14,008)
+                                      grand_total=f"{grand_total_qty:,}")
 
     return render_template_string(INDEX_HTML)
 
