@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (PROFESSIONAL DESIGN)
+#  HTML & CSS TEMPLATES (UPDATED DESIGN)
 # ==========================================
 
 INDEX_HTML = """
@@ -36,6 +36,7 @@ INDEX_HTML = """
         .upload-icon { font-size: 3rem; color: #764ba2; margin-bottom: 20px; }
         .file-input-wrapper { border: 2px dashed #cbd5e0; border-radius: 10px; padding: 40px; background: #f8fafc; transition: all 0.3s; }
         .file-input-wrapper:hover { border-color: #764ba2; background: #fff; }
+        .footer-credit { margin-top: 30px; font-size: 0.9rem; color: #6c757d; }
     </style>
 </head>
 <body>
@@ -52,11 +53,14 @@ INDEX_HTML = """
                             <div class="file-input-wrapper mb-4">
                                 <div class="upload-icon">📂</div>
                                 <h5>Select PDF Files</h5>
-                                <p class="text-muted small">You can select multiple files at once</p>
+                                <p class="text-muted small">Select both Booking File & PO Files together</p>
                                 <input class="form-control form-control-lg mt-3" type="file" name="pdf_files" multiple accept=".pdf" required>
                             </div>
                             <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Report</button>
                         </form>
+                        <div class="footer-credit">
+                            Report Created By <strong>Mehedi Hasan</strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -82,8 +86,6 @@ RESULT_HTML = """
         .company-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
         .company-name { font-size: 2.5rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; }
         .report-title { font-size: 1.2rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
-        
-        /* Date Style Updated */
         .date-section { font-size: 1.3rem; font-weight: 800; color: #000; margin-top: 10px; }
         
         /* Info Boxes */
@@ -100,78 +102,54 @@ RESULT_HTML = """
 
         /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 30px; overflow: hidden; border: 1px solid #dee2e6; }
-        .color-header { background-color: #e9ecef; color: #333; padding: 10px 15px; font-size: 1rem; font-weight: 700; border-bottom: 1px solid #dee2e6; }
-        .table { margin-bottom: 0; }
         
-        /* HEADER (Sizes) STYLING - Bigger & Bold */
-        .table th { 
-            background-color: #2c3e50; 
-            color: white; 
+        /* COLOR HEADER STYLE UPDATED */
+        .color-header { 
+            background-color: #e9ecef; 
+            color: #2c3e50; 
+            padding: 12px 15px; 
+            font-size: 1.3rem; /* ১ পয়েন্ট বড় করা হয়েছে */
             font-weight: 900; /* Extra Bold */
-            font-size: 1.1rem; /* 1pt Larger (approx) */
-            text-align: center; 
-            border: 1px solid #34495e; 
-            padding: 10px; 
-            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6; 
+            text-transform: uppercase;
         }
-        
-        /* BODY (Data) STYLING - Bold */
-        .table td { 
-            text-align: center; 
-            vertical-align: middle; 
-            border: 1px solid #dee2e6; 
-            padding: 8px; 
-            color: #000; 
-            font-weight: 700; /* Bold Data */
-            font-size: 1rem;
-        }
-        
+
+        .table { margin-bottom: 0; }
+        .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.1rem; text-align: center; border: 1px solid #34495e; padding: 10px; vertical-align: middle; }
+        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 8px; color: #000; font-weight: 700; font-size: 1rem; }
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
-        /* P.O NO Column Specific Styles */
-        .order-col { 
-            font-weight: 800 !important; 
-            text-align: left !important; 
-            padding-left: 10px !important; 
-            background-color: #fdfdfd;
-            white-space: nowrap; /* টেক্সট অনুযায়ী ফিট হবে */
-            width: 1%; /* ব্রাউজারকে ফোর্স করবে কলাম ছোট রাখতে */
-        }
-        
+        .order-col { font-weight: 800 !important; text-align: left !important; padding-left: 10px !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
-
-        /* Summary Row Styles (Actual Qty & 3%) */
         .summary-row td { background-color: #f2f2f2 !important; font-weight: 800 !important; border-top: 2px solid #aaa !important; }
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
 
-        /* Action Buttons */
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
-        .btn-print:hover { background-color: #1a252f; color: white; }
+        
+        /* Footer Credit Style */
+        .footer-credit { text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 20px; border-top: 1px solid #ddd; }
 
-        /* PRINT STYLES */
         @media print {
             @page { margin: 10mm; size: A4; }
             body { background-color: white; padding: 0; -webkit-print-color-adjust: exact; }
             .container { max-width: 100%; width: 100%; padding: 0; }
             .no-print { display: none !important; }
-            
             .company-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
             .info-box { border: 1px solid #000; border-left: 5px solid #000; box-shadow: none; }
             .total-box { background: white !important; color: black !important; border: 2px solid #000; box-shadow: none; }
-            
-            .table th { background-color: #ddd !important; color: black !important; border: 1px solid #000; font-weight: 900 !important; font-size: 1.1rem !important; }
+            .table th { background-color: #ddd !important; color: black !important; border: 1px solid #000; font-weight: 900 !important; }
             .table td { border: 1px solid #000; font-weight: 700 !important; }
-            .color-header { background-color: #f1f1f1 !important; border: 1px solid #000; border-bottom: none; }
+            .color-header { background-color: #f1f1f1 !important; border: 1px solid #000; border-bottom: none; font-size: 1.3rem !important; font-weight: 900 !important; }
             .table-card { border: none; margin-bottom: 20px; break-inside: avoid; }
             .total-col { background-color: #f0f0f0 !important; color: black !important; }
             .summary-row td { background-color: #e0e0e0 !important; font-weight: 900 !important; }
+            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 30px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        
         <div class="action-bar no-print">
             <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Upload New</a>
             <button onclick="window.print()" class="btn btn-print">🖨️ Print Report</button>
@@ -220,15 +198,14 @@ RESULT_HTML = """
                     </div>
                 </div>
             {% endfor %}
+            
+            <div class="footer-credit">
+                Report Created By <strong>Mehedi Hasan</strong>
+            </div>
         {% endif %}
-        
-        <div class="text-center mt-5 mb-5 no-print">
-             <p class="text-muted small">System Developed by AI Assistant</p>
-        </div>
     </div>
 
     <script>
-        // তারিখ ফরম্যাট: DD-MM-YYYY
         const dateObj = new Date();
         const day = String(dateObj.getDate()).padStart(2, '0');
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -271,20 +248,31 @@ def sort_sizes(size_list):
 
 def extract_metadata(first_page_text):
     meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
+    
+    # Buyer
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    booking_match = re.search(r"Booking NO\.?[:\s]*([\w/]+)", first_page_text, re.IGNORECASE)
-    if booking_match: meta['booking'] = booking_match.group(1).strip()
+    # Booking Number (Updated Regex to capture full string with slashes/spaces)
+    # এটি "Booking NO" এর পর লাইন ব্রেক পর্যন্ত সব কিছু নেবে
+    booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([^\n\r]+)", first_page_text, re.IGNORECASE)
+    if booking_match: 
+        raw_booking = booking_match.group(1).strip()
+        # যদি "System NO" একই লাইনে থাকে, তবে সেটি বাদ দেওয়া
+        if "System" in raw_booking:
+            raw_booking = raw_booking.split("System")[0].strip()
+        meta['booking'] = raw_booking
 
+    # Style
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
     else:
         style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
         if style_match: meta['style'] = style_match.group(1).strip()
+    
     return meta
 
 def extract_data_dynamic(file_path):
@@ -295,8 +283,13 @@ def extract_data_dynamic(file_path):
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
-        metadata = extract_metadata(first_page_text)
         
+        # বুকিং ফাইল ডিটেকশন (এই ফাইল থেকে মেটাডেটা নেওয়া হবে, টেবিল নয়)
+        if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
+            metadata = extract_metadata(first_page_text)
+            return [], metadata # Empty list returns implies no table extraction from booking file
+
+        # সাধারণ PO ফাইলের লজিক
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
         if order_match: order_no = order_match.group(1)
         else:
@@ -366,7 +359,7 @@ def extract_data_dynamic(file_path):
                     if final_qtys and color_name:
                          for idx, size in enumerate(sizes):
                             extracted_data.append({
-                                'P.O NO': order_no, # এখানে নাম পরিবর্তন করা হয়েছে
+                                'P.O NO': order_no,
                                 'Color': color_name,
                                 'Size': size,
                                 'Quantity': final_qtys[idx]
@@ -388,16 +381,24 @@ def index():
         all_data = []
         final_meta = {'buyer': '-', 'booking': '-', 'style': '-'}
         
-        for i, file in enumerate(uploaded_files):
+        for file in uploaded_files:
             if file.filename == '': continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
+            
+            # ডেটা এবং মেটাডেটা দুটোই রিটার্ন করবে
             data, meta = extract_data_dynamic(file_path)
-            all_data.extend(data)
-            if i == 0: final_meta = meta
+            
+            # যদি ডেটা ফাঁকা হয় কিন্তু মেটাডেটা থাকে, তার মানে এটি বুকিং ফাইল
+            if meta['buyer'] != 'N/A' and not data:
+                final_meta = meta
+            
+            # যদি ডেটা থাকে, তার মানে এটি PO ফাইল
+            if data:
+                all_data.extend(data)
         
         if not all_data:
-            return render_template_string(RESULT_HTML, tables=None, message="No valid data found in PDFs.")
+            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found. Make sure you uploaded PO files.")
 
         df = pd.DataFrame(all_data)
         df['Color'] = df['Color'].str.strip()
@@ -409,20 +410,15 @@ def index():
 
         for color in unique_colors:
             color_df = df[df['Color'] == color]
-            
-            # P.O NO কে ইনডেক্স হিসেবে সেট করা
             pivot = color_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
             
-            # সাইজ সর্টিং
             existing_sizes = pivot.columns.tolist()
             sorted_sizes = sort_sizes(existing_sizes)
             pivot = pivot[sorted_sizes]
             
-            # টোটাল কলাম
             pivot['Total'] = pivot.sum(axis=1)
             grand_total_qty += pivot['Total'].sum()
 
-            # ২. নতুন দুটি রো যোগ করা (Actual Qty & 3%)
             actual_qty = pivot.sum()
             actual_qty.name = 'Actual Qty'
             
@@ -431,26 +427,16 @@ def index():
             
             pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
             
-            # ৩. টেবিল রিসেট করা (যাতে P.O NO কলাম হিসেবে আসে)
             pivot = pivot.reset_index()
-            # কলামের নাম P.O NO রাখা
             pivot = pivot.rename(columns={'index': 'P.O NO'})
-            
-            # ৪. Size নামটির হেডার রিমুভ করা (যাতে শুধু P.O NO এবং সাইজগুলো থাকে)
             pivot.columns.name = None
 
-            # ৫. HTML জেনারেশন
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # ৬. স্টাইলিং ক্লাস ইনজেক্ট করা
-            # P.O NO কলাম (১ম কলাম)
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
-            
-            # Total হেডার
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col">Total</th>')
             
-            # Summary Rows হাইলাইট
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
