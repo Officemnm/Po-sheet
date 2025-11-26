@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (COLOR FIXED)
+#  HTML & CSS TEMPLATES (2-COLUMN INFO BOX)
 # ==========================================
 
 INDEX_HTML = """
@@ -88,13 +88,39 @@ RESULT_HTML = """
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes */
+        /* Info Boxes (2-Column Layout) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
-        .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 10px 15px; border-radius: 5px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .total-box { background: #2c3e50; color: white; padding: 10px 15px; border-radius: 5px; width: 200px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
         
-        .info-item { margin-bottom: 4px; font-size: 1rem; }
-        .info-label { font-weight: 700; color: #555; width: 70px; display: inline-block; }
+        .info-box { 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-left: 5px solid #2c3e50; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            flex: 2; /* Takes more width */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            
+            /* Grid Layout for split view */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .total-box { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            width: 220px; 
+            text-align: right; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
+        }
+        
+        .info-item { margin-bottom: 4px; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .info-label { font-weight: 700; color: #555; width: 80px; display: inline-block; }
         .info-value { font-weight: 600; color: #000; }
         
         .total-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
@@ -115,7 +141,6 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
-        /* Header Cells */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
@@ -127,7 +152,6 @@ RESULT_HTML = """
             vertical-align: middle; 
         }
         
-        /* Data Cells */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
@@ -140,44 +164,21 @@ RESULT_HTML = """
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
-        /* Special Column Styles */
-        .order-col { 
-            font-weight: 800 !important; 
-            text-align: center !important; 
-            background-color: #fdfdfd; 
-            white-space: nowrap; 
-            width: 1%; 
-        }
-        
+        .order-col { font-weight: 800 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
-        
-        /* "Total" Header Specific Style */
-        .total-col-header {
-            background-color: #e8f6f3 !important;
-            color: #000 !important;
-            font-weight: 900 !important;
-            border: 1px solid #34495e !important;
-        }
+        .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* ============================================================
-           SUMMARY ROW STYLES (FIXED FOR DISPLAY & PRINT)
-           ============================================================ */
-        
-        /* Bootstrap Override: Force background color on these specific rows */
+        /* SUMMARY ROW STYLES (Light Blue Override) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
-            background-color: #d1ecff !important; /* হালকা আকাশী রঙ */
-            --bs-table-accent-bg: #d1ecff !important; /* Bootstrap 5 Variable Override */
+            background-color: #d1ecff !important; 
+            --bs-table-accent-bg: #d1ecff !important; 
             color: #000 !important;
             font-weight: 800 !important;
             border-top: 2px solid #aaa !important;
         }
         
-        .summary-label { 
-            text-align: right !important; 
-            padding-right: 15px !important; 
-            color: #000 !important; 
-        }
+        .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
@@ -188,38 +189,32 @@ RESULT_HTML = """
            PRINT SPECIFIC STYLES
            ========================================= */
         @media print {
-            @page { 
-                margin: 5mm; 
-                size: portrait; 
-            }
+            @page { margin: 5mm; size: portrait; }
             
-            body { 
-                background-color: white; 
-                padding: 0; 
-                /* ব্রাউজারকে ফোর্স করা কালার প্রিন্ট করতে */
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            
+            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
             .company-name { font-size: 1.8rem; }
+            .report-title { font-size: 1rem; margin: 0; }
+            .date-section { font-size: 1rem; margin: 0; }
             
             .info-container { margin-bottom: 10px; }
-            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; }
-            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
-            
-            /* টেবিলের বর্ডার ঠিক রাখা */
-            .table th, .table td { 
+            .info-box { 
                 border: 1px solid #000 !important; 
-                padding: 2px !important; 
-                font-size: 10pt !important; 
+                border-left: 5px solid #000 !important; 
+                padding: 5px 10px; 
+                display: grid; /* Grid force in print */
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
             }
+            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
+            .total-value { font-size: 1.5rem; }
             
-            /* কালার প্রিন্ট ফিক্স (Box Shadow Hack) */
+            .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 10pt !important; }
+            
+            /* Color Hacks for Print */
             .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
                 box-shadow: inset 0 0 0 9999px #d1ecff !important; 
@@ -236,11 +231,7 @@ RESULT_HTML = """
                 box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
             }
             
-            .total-col-header {
-                background-color: #e8f6f3 !important;
-                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
-                color: #000 !important;
-            }
+            .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; }
@@ -267,19 +258,18 @@ RESULT_HTML = """
         {% if tables %}
             <div class="info-container">
                 <div class="info-box">
-                    <div class="info-item">
-                        <span class="info-label">Buyer:</span>
-                        <span class="info-value">{{ meta.buyer }}</span>
+                    <div>
+                        <div class="info-item"><span class="info-label">Buyer:</span> <span class="info-value">{{ meta.buyer }}</span></div>
+                        <div class="info-item"><span class="info-label">Booking:</span> <span class="info-value">{{ meta.booking }}</span></div>
+                        <div class="info-item"><span class="info-label">Style:</span> <span class="info-value">{{ meta.style }}</span></div>
                     </div>
-                    <div class="info-item">
-                        <span class="info-label">Booking:</span>
-                        <span class="info-value">{{ meta.booking }}</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Style:</span>
-                        <span class="info-value">{{ meta.style }}</span>
+                    <div>
+                        <div class="info-item"><span class="info-label">Season:</span> <span class="info-value">{{ meta.season }}</span></div>
+                        <div class="info-item"><span class="info-label">Dept:</span> <span class="info-value">{{ meta.dept }}</span></div>
+                        <div class="info-item"><span class="info-label">Item:</span> <span class="info-value">{{ meta.item }}</span></div>
                     </div>
                 </div>
+                
                 <div class="total-box">
                     <div class="total-label">Grand Total</div>
                     <div class="total-value">{{ grand_total }}</div>
@@ -316,7 +306,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (DATA EXTRACTION)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -346,39 +336,65 @@ def sort_sizes(size_list):
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
-    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
+    meta = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
     
+    # Buyer
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
+    # Booking (Clean multiline)
     booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
     if booking_block_match: 
         raw_booking = booking_block_match.group(1).strip()
         clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
-        if "System" in clean_booking:
-            clean_booking = clean_booking.split("System")[0]
+        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
         meta['booking'] = clean_booking
 
+    # Style
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
     else:
         style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
         if style_match: meta['style'] = style_match.group(1).strip()
-    
+
+    # Season
+    season_match = re.search(r"Season\s*[:\n\"]*([\w\d-]+)", first_page_text, re.IGNORECASE)
+    if season_match: meta['season'] = season_match.group(1).strip()
+
+    # Dept
+    dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
+    if dept_match: meta['dept'] = dept_match.group(1).strip()
+
+    # Garments Item
+    item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
+    if item_match: 
+        item_text = item_match.group(1).strip()
+        # Clean up if captures too much (e.g. Style Des next)
+        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
+        meta['item'] = item_text
+
     return meta
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
+    # Default Meta to prevent errors
+    metadata = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
     order_no = "Unknown"
     
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
+        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -472,7 +488,10 @@ def index():
 
         uploaded_files = request.files.getlist('pdf_files')
         all_data = []
-        final_meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
+        final_meta = {
+            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
+            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+        }
         
         for file in uploaded_files:
             if file.filename == '': continue
@@ -481,6 +500,7 @@ def index():
             
             data, meta = extract_data_dynamic(file_path)
             
+            # If we found booking metadata, update it
             if meta['buyer'] != 'N/A':
                 final_meta = meta
             
@@ -524,17 +544,14 @@ def index():
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # Apply Classes and Styles
+            # Injections
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
-            
-            # Replace Standard Header with Custom Class for "Total"
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
-            # Apply Summary Rows (Class Injection)
+            # Color Fix
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
-            # Row Injection
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
 
             final_tables.append({'color': color, 'table': table_html})
