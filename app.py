@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (2-COLUMN INFO BOX)
+#  HTML & CSS TEMPLATES (BIG FONT & BOLD)
 # ==========================================
 
 INDEX_HTML = """
@@ -36,7 +36,7 @@ INDEX_HTML = """
         .upload-icon { font-size: 3rem; color: #764ba2; margin-bottom: 20px; }
         .file-input-wrapper { border: 2px dashed #cbd5e0; border-radius: 10px; padding: 40px; background: #f8fafc; transition: all 0.3s; }
         .file-input-wrapper:hover { border-color: #764ba2; background: #fff; }
-        .footer-credit { margin-top: 30px; font-size: 0.9rem; color: #6c757d; }
+        .footer-credit { margin-top: 30px; font-size: 0.8rem; color: #6c757d; }
     </style>
 </head>
 <body>
@@ -82,13 +82,13 @@ RESULT_HTML = """
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         
-        /* Header Styles */
+        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes (2-Column Layout) */
+        /* Info Boxes (Text Size Increased +3pt approx) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         
         .info-box { 
@@ -97,10 +97,8 @@ RESULT_HTML = """
             border-left: 5px solid #2c3e50; 
             padding: 10px 15px; 
             border-radius: 5px; 
-            flex: 2; /* Takes more width */
+            flex: 2; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            
-            /* Grid Layout for split view */
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
@@ -111,7 +109,7 @@ RESULT_HTML = """
             color: white; 
             padding: 10px 15px; 
             border-radius: 5px; 
-            width: 220px; 
+            width: 240px; /* Width increased for bigger text */
             text-align: right; 
             display: flex; 
             flex-direction: column; 
@@ -119,12 +117,21 @@ RESULT_HTML = """
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
-        .info-item { margin-bottom: 4px; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .info-label { font-weight: 700; color: #555; width: 80px; display: inline-block; }
-        .info-value { font-weight: 600; color: #000; }
+        /* Increased Font Size for Info Items */
+        .info-item { 
+            margin-bottom: 6px; 
+            font-size: 1.3rem; /* Increased (~13pt/14pt) */
+            font-weight: 700; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
         
-        .total-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
-        .total-value { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+        .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
+        .info-value { font-weight: 800; color: #000; }
+        
+        .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
 
         /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
@@ -132,8 +139,8 @@ RESULT_HTML = """
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
-            padding: 8px 12px; 
-            font-size: 1.2rem; 
+            padding: 10px 12px; 
+            font-size: 1.5rem; /* Increased Header Size */
             font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
@@ -141,41 +148,44 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
+        /* Table Header Cells (Bigger & Bolder) */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
             font-weight: 900; 
-            font-size: 1rem; 
+            font-size: 1.2rem; /* Increased (~13-14pt) */
             text-align: center; 
             border: 1px solid #34495e; 
-            padding: 6px 4px; 
+            padding: 8px 4px; 
             vertical-align: middle; 
         }
         
+        /* Table Data Cells (Bigger & Bolder) */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
-            padding: 4px 2px; 
+            padding: 6px 3px; 
             color: #000; 
-            font-weight: 700; 
-            font-size: 0.95rem; 
+            font-weight: 800; /* Extra Bold */
+            font-size: 1.15rem; /* Increased (~13pt) */
         }
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
-        .order-col { font-weight: 800 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
+        .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* SUMMARY ROW STYLES (Light Blue Override) */
+        /* SUMMARY ROW STYLES (Light Blue & Bold) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
             background-color: #d1ecff !important; 
             --bs-table-accent-bg: #d1ecff !important; 
             color: #000 !important;
-            font-weight: 800 !important;
+            font-weight: 900 !important; /* Extra Bold */
             border-top: 2px solid #aaa !important;
+            font-size: 1.2rem !important; /* Even Bigger for Summary */
         }
         
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
@@ -183,7 +193,16 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
+        /* Footer Smaller (-1pt) */
+        .footer-credit { 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 20px; 
+            font-size: 0.8rem; /* Reduced Size (~9pt) */
+            color: #2c3e50; 
+            padding-top: 10px; 
+            border-top: 1px solid #ddd; 
+        }
 
         /* =========================================
            PRINT SPECIFIC STYLES
@@ -191,50 +210,77 @@ RESULT_HTML = """
         @media print {
             @page { margin: 5mm; size: portrait; }
             
-            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            body { 
+                background-color: white; 
+                padding: 0; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
-            .company-name { font-size: 1.8rem; }
-            .report-title { font-size: 1rem; margin: 0; }
-            .date-section { font-size: 1rem; margin: 0; }
+            /* Header Size Unchanged in Print */
+            .company-name { font-size: 1.8rem; } 
             
             .info-container { margin-bottom: 10px; }
             .info-box { 
                 border: 1px solid #000 !important; 
                 border-left: 5px solid #000 !important; 
                 padding: 5px 10px; 
-                display: grid; /* Grid force in print */
+                display: grid; 
                 grid-template-columns: 1fr 1fr;
-                gap: 20px;
+                gap: 10px;
             }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
-            .total-value { font-size: 1.5rem; }
             
-            .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 10pt !important; }
+            /* Info Items Print Size (+3pt) */
+            .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             
-            /* Color Hacks for Print */
+            /* Table Print Size (+3pt) */
+            .table th, .table td { 
+                border: 1px solid #000 !important; 
+                padding: 2px !important; 
+                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
+                font-weight: 800 !important;
+            }
+            
+            /* Summary Row Color Force */
             .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
                 box-shadow: inset 0 0 0 9999px #d1ecff !important; 
                 color: #000 !important;
-                font-weight: 800 !important;
+                font-weight: 900 !important;
             }
             
             .color-header { 
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
-                font-size: 1.1rem !important; 
+                font-size: 1.4rem !important; /* Bigger */
+                font-weight: 900 !important;
                 padding: 5px;
                 margin-top: 10px;
                 box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
             }
             
-            .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
+            .total-col-header {
+                background-color: #e8f6f3 !important;
+                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
+                color: #000 !important;
+            }
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
-            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; }
+            
+            /* Footer Smaller */
+            .footer-credit { 
+                display: block !important; 
+                color: black; 
+                border-top: 1px solid #000; 
+                margin-top: 10px; 
+                font-size: 8pt !important; /* Smaller */
+            }
         }
     </style>
 </head>
@@ -341,14 +387,12 @@ def extract_metadata(first_page_text):
         'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
     }
     
-    # Buyer
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    # Booking (Clean multiline)
     booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
     if booking_block_match: 
         raw_booking = booking_block_match.group(1).strip()
@@ -356,26 +400,21 @@ def extract_metadata(first_page_text):
         if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
         meta['booking'] = clean_booking
 
-    # Style
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
     else:
         style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
         if style_match: meta['style'] = style_match.group(1).strip()
 
-    # Season
     season_match = re.search(r"Season\s*[:\n\"]*([\w\d-]+)", first_page_text, re.IGNORECASE)
     if season_match: meta['season'] = season_match.group(1).strip()
 
-    # Dept
     dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
     if dept_match: meta['dept'] = dept_match.group(1).strip()
 
-    # Garments Item
     item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
     if item_match: 
         item_text = item_match.group(1).strip()
-        # Clean up if captures too much (e.g. Style Des next)
         if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
         meta['item'] = item_text
 
@@ -383,7 +422,6 @@ def extract_metadata(first_page_text):
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    # Default Meta to prevent errors
     metadata = {
         'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
         'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
@@ -394,7 +432,6 @@ def extract_data_dynamic(file_path):
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -500,7 +537,6 @@ def index():
             
             data, meta = extract_data_dynamic(file_path)
             
-            # If we found booking metadata, update it
             if meta['buyer'] != 'N/A':
                 final_meta = meta
             
