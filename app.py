@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (COMPACT & FIXED)
+#  HTML & CSS TEMPLATES (FINAL DESIGN)
 # ==========================================
 
 INDEX_HTML = """
@@ -123,16 +123,24 @@ RESULT_HTML = """
             font-size: 1rem; 
             text-align: center; 
             border: 1px solid #34495e; 
-            padding: 6px 4px; /* Reduced Padding */
+            padding: 6px 4px; 
             vertical-align: middle; 
         }
         
+        /* "Total" Header Specific Style */
+        .total-col-header {
+            background-color: #e8f6f3 !important; /* হালকা ব্যাকগ্রাউন্ড */
+            color: #000 !important; /* কালো টেক্সট */
+            font-weight: 900 !important;
+            border: 1px solid #34495e !important;
+        }
+
         /* Data Cells */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
-            padding: 4px 2px; /* Tight Padding for compact design */
+            padding: 4px 2px; 
             color: #000; 
             font-weight: 700; 
             font-size: 0.95rem; 
@@ -143,7 +151,7 @@ RESULT_HTML = """
         /* Special Column Styles */
         .order-col { 
             font-weight: 800 !important; 
-            text-align: center !important; /* CENTER ALIGNMENT FIX */
+            text-align: center !important; 
             background-color: #fdfdfd; 
             white-space: nowrap; 
             width: 1%; 
@@ -151,17 +159,17 @@ RESULT_HTML = """
         
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         
-        /* SUMMARY ROW STYLES (Light Blue) */
+        /* SUMMARY ROW STYLES (Light Blue & Bold Black) */
         .summary-row td { 
-            background-color: #d1ecff !important; /* আরও একটু গাঢ় নীল যাতে প্রিন্টে আসে */
+            background-color: #d4e6f1 !important; /* হালকা নীল রঙ */
+            color: #000 !important; /* কালো টেক্সট */
             font-weight: 800 !important; 
-            border-top: 2px solid #aaa !important;
-            color: #000 !important;
-            -webkit-print-color-adjust: exact; /* Chrome/Safari Print Fix */
-            print-color-adjust: exact; /* Standard Print Fix */
+            border-top: 2px solid #2c3e50 !important; /* একটু গাঢ় বর্ডার */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         
-        .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
+        .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
@@ -169,11 +177,11 @@ RESULT_HTML = """
         .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         /* =========================================
-           PRINT SPECIFIC STYLES (COMPACT MODE)
+           PRINT SPECIFIC STYLES
            ========================================= */
         @media print {
             @page { 
-                margin: 5mm; /* মার্জিন একদম কমিয়ে দেওয়া হয়েছে */
+                margin: 5mm; 
                 size: portrait; 
             }
             
@@ -187,28 +195,32 @@ RESULT_HTML = """
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
-            /* Header Compact */
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
-            .company-name { font-size: 1.8rem; } /* নাম একটু ছোট করা হয়েছে জায়গার জন্য */
+            .company-name { font-size: 1.8rem; }
             .report-title { font-size: 1rem; margin: 0; }
             .date-section { font-size: 1rem; margin: 0; }
             
-            /* Info Box Borders */
             .info-container { margin-bottom: 10px; }
             .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             .total-value { font-size: 1.5rem; }
             
-            /* Table Compact Layout */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
-                padding: 2px !important; /* প্যাডিং মিনিমাম */
-                font-size: 10pt !important; /* ফন্ট সাইজ স্ট্যান্ডার্ড রাখা হয়েছে */
+                padding: 2px !important; 
+                font-size: 10pt !important; 
             }
             
-            /* Summary Row Color Force */
+            /* Header Specifics for Print */
+            .total-col-header {
+                background-color: #e8f6f3 !important; 
+                color: #000 !important;
+            }
+
+            /* Summary Row Color Force Print */
             .summary-row td { 
-                background-color: #d1ecff !important; 
+                background-color: #d4e6f1 !important; 
+                color: #000 !important;
                 -webkit-print-color-adjust: exact !important; 
             }
             
@@ -503,8 +515,16 @@ def index():
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
+            # Apply Classes and Styles
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
-            table_html = table_html.replace('<th>Total</th>', '<th class="total-col">Total</th>')
+            
+            # NEW: Replace Standard Header with Custom Class for "Total"
+            table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
+            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>') # Fallback just in case
+            
+            # Replace Data Cells for Total Column
+            # This is tricky with simple replace, so we rely on CSS styling for the LAST column if possible, 
+            # but for now, let's stick to row styling which is more important.
             
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
