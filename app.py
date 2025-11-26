@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (FINAL POLISHED)
 # ==========================================
 
 INDEX_HTML = """
@@ -103,7 +103,6 @@ RESULT_HTML = """
         /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 30px; overflow: hidden; border: 1px solid #dee2e6; }
         
-        /* COLOR HEADER STYLE */
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
@@ -114,14 +113,45 @@ RESULT_HTML = """
             text-transform: uppercase;
         }
 
-        .table { margin-bottom: 0; }
-        .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.1rem; text-align: center; border: 1px solid #34495e; padding: 10px; vertical-align: middle; }
-        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 8px; color: #000; font-weight: 700; font-size: 1rem; }
+        .table { margin-bottom: 0; border-collapse: collapse; width: 100%; }
+        
+        /* Header Cells */
+        .table th { 
+            background-color: #2c3e50; 
+            color: white; 
+            font-weight: 900; 
+            font-size: 1.1rem; 
+            text-align: center; 
+            border: 1px solid #34495e; 
+            padding: 8px; 
+            vertical-align: middle; 
+        }
+        
+        /* Data Cells */
+        .table td { 
+            text-align: center; 
+            vertical-align: middle; 
+            border: 1px solid #dee2e6; 
+            padding: 6px; 
+            color: #000; 
+            font-weight: 700; 
+            font-size: 0.95rem; 
+        }
+        
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
+        /* Special Column Styles */
         .order-col { font-weight: 800 !important; text-align: left !important; padding-left: 10px !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
-        .summary-row td { background-color: #f2f2f2 !important; font-weight: 800 !important; border-top: 2px solid #aaa !important; }
+        
+        /* SUMMARY ROW STYLES (Light Color Fix) */
+        .summary-row td { 
+            background-color: #eaf6ff !important; /* হালকা নীলচে রঙ */
+            font-weight: 800 !important; 
+            border-top: 2px solid #aaa !important;
+            color: #000 !important;
+        }
+        
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
@@ -129,21 +159,61 @@ RESULT_HTML = """
         
         .footer-credit { text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 20px; border-top: 1px solid #ddd; }
 
+        /* =========================================
+           PRINT SPECIFIC STYLES (Fixes Applied)
+           ========================================= */
         @media print {
-            @page { margin: 10mm; size: A4; }
-            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact; }
-            .container { max-width: 100%; width: 100%; padding: 0; }
+            @page { 
+                margin: 5mm; 
+                size: landscape; /* বেশি কলাম থাকলে Landscape মোড ভালো */
+            }
+            
+            body { 
+                background-color: white; 
+                padding: 0; 
+                -webkit-print-color-adjust: exact; /* কালার প্রিন্ট ফোর্স করা */
+                print-color-adjust: exact;
+            }
+            
+            .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
-            .company-header { border-bottom: 2px solid #000; margin-bottom: 20px; }
-            .info-box { border: 1px solid #000; border-left: 5px solid #000; box-shadow: none; }
-            .total-box { background: white !important; color: black !important; border: 2px solid #000; box-shadow: none; }
-            .table th { background-color: #ddd !important; color: black !important; border: 1px solid #000; font-weight: 900 !important; }
-            .table td { border: 1px solid #000; font-weight: 700 !important; }
-            .color-header { background-color: #f1f1f1 !important; border: 1px solid #000; border-bottom: none; font-size: 1.3rem !important; font-weight: 900 !important; }
+            
+            /* Header adjustments for print */
+            .company-header { border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 10px; }
+            .company-name { font-size: 2rem; }
+            
+            /* Info Box Borders */
+            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; box-shadow: none; }
+            .total-box { background: white !important; color: black !important; border: 2px solid #000 !important; box-shadow: none; }
+            
+            /* Table Borders Fix - STRICT */
+            .table { width: 100%; border-collapse: collapse !important; }
+            .table th, .table td { 
+                border: 1px solid #000 !important; /* কালো বর্ডার ফোর্স করা */
+                padding: 4px !important; /* প্যাডিং কমানো যাতে এক পেজে ধরে */
+                font-size: 10pt !important; /* ফন্ট সাইজ রিডেবল রাখা */
+            }
+            
+            .table th { background-color: #ddd !important; color: black !important; }
+            
+            .color-header { 
+                background-color: #f1f1f1 !important; 
+                border: 1px solid #000 !important; 
+                border-bottom: none !important; 
+                font-size: 1.2rem !important; 
+                font-weight: 900 !important; 
+                margin-top: 15px;
+            }
+            
             .table-card { border: none; margin-bottom: 20px; break-inside: avoid; }
-            .total-col { background-color: #f0f0f0 !important; color: black !important; }
-            .summary-row td { background-color: #e0e0e0 !important; font-weight: 900 !important; }
-            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 30px; }
+            
+            /* Summary Rows Color in Print */
+            .summary-row td { 
+                background-color: #e0f0f5 !important; /* প্রিন্টে খুব হালকা কালার */
+                font-weight: 900 !important; 
+            }
+            
+            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 20px; }
         }
     </style>
 </head>
@@ -254,12 +324,13 @@ def extract_metadata(first_page_text):
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([^\n\r]+)", first_page_text, re.IGNORECASE)
-    if booking_match: 
-        raw_booking = booking_match.group(1).strip()
-        if "System" in raw_booking:
-            raw_booking = raw_booking.split("System")[0].strip()
-        meta['booking'] = raw_booking
+    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if booking_block_match: 
+        raw_booking = booking_block_match.group(1).strip()
+        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean_booking:
+            clean_booking = clean_booking.split("System")[0]
+        meta['booking'] = clean_booking
 
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
@@ -271,7 +342,6 @@ def extract_metadata(first_page_text):
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    # ডিফল্ট মেটাডেটা ইনিশিয়ালাইজেশন (Crash প্রতিরোধের জন্য)
     metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
     order_no = "Unknown"
     
@@ -279,7 +349,6 @@ def extract_data_dynamic(file_path):
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # বুকিং ফাইল ডিটেকশন
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -382,7 +451,6 @@ def index():
             
             data, meta = extract_data_dynamic(file_path)
             
-            # মেটাডেটা আপডেট করা (যদি ভ্যালিড হয়)
             if meta['buyer'] != 'N/A':
                 final_meta = meta
             
