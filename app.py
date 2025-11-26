@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FINAL FIXED)
+#  HTML & CSS TEMPLATES (COMPACT & FIXED)
 # ==========================================
 
 INDEX_HTML = """
@@ -83,47 +83,47 @@ RESULT_HTML = """
         .container { max-width: 1200px; }
         
         /* Header Styles */
-        .company-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
-        .company-name { font-size: 2.5rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; }
-        .report-title { font-size: 1.2rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
-        .date-section { font-size: 1.3rem; font-weight: 800; color: #000; margin-top: 10px; }
+        .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
+        .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
+        .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes */
-        .info-container { display: flex; justify-content: space-between; margin-bottom: 30px; gap: 20px; }
-        .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 20px; border-radius: 8px; flex: 1; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .total-box { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; width: 250px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3); }
+        /* Info Boxes (Compact) */
+        .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
+        .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 10px 15px; border-radius: 5px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .total-box { background: #2c3e50; color: white; padding: 10px 15px; border-radius: 5px; width: 200px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
         
-        .info-item { margin-bottom: 8px; font-size: 1.05rem; }
-        .info-label { font-weight: 700; color: #555; width: 80px; display: inline-block; }
+        .info-item { margin-bottom: 4px; font-size: 1rem; }
+        .info-label { font-weight: 700; color: #555; width: 70px; display: inline-block; }
         .info-value { font-weight: 600; color: #000; }
         
-        .total-label { font-size: 1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
-        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
+        .total-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+        .total-value { font-size: 2rem; font-weight: 800; line-height: 1.1; }
 
         /* Table Styles */
-        .table-card { background: white; border-radius: 0; margin-bottom: 30px; overflow: hidden; border: 1px solid #dee2e6; }
+        .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
         
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
-            padding: 12px 15px; 
-            font-size: 1.3rem; 
+            padding: 8px 12px; 
+            font-size: 1.2rem; 
             font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
         }
 
-        .table { margin-bottom: 0; border-collapse: collapse; width: 100%; }
+        .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
         /* Header Cells */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
             font-weight: 900; 
-            font-size: 1.1rem; 
+            font-size: 1rem; 
             text-align: center; 
             border: 1px solid #34495e; 
-            padding: 8px; 
+            padding: 6px 4px; /* Reduced Padding */
             vertical-align: middle; 
         }
         
@@ -132,7 +132,7 @@ RESULT_HTML = """
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
-            padding: 6px; 
+            padding: 4px 2px; /* Tight Padding for compact design */
             color: #000; 
             font-weight: 700; 
             font-size: 0.95rem; 
@@ -141,15 +141,24 @@ RESULT_HTML = """
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
         /* Special Column Styles */
-        .order-col { font-weight: 800 !important; text-align: left !important; padding-left: 10px !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
+        .order-col { 
+            font-weight: 800 !important; 
+            text-align: center !important; /* CENTER ALIGNMENT FIX */
+            background-color: #fdfdfd; 
+            white-space: nowrap; 
+            width: 1%; 
+        }
+        
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         
-        /* SUMMARY ROW STYLES (Light Color Fix) */
+        /* SUMMARY ROW STYLES (Light Blue) */
         .summary-row td { 
-            background-color: #eaf6ff !important; /* হালকা নীলচে রঙ */
+            background-color: #d1ecff !important; /* আরও একটু গাঢ় নীল যাতে প্রিন্টে আসে */
             font-weight: 800 !important; 
             border-top: 2px solid #aaa !important;
             color: #000 !important;
+            -webkit-print-color-adjust: exact; /* Chrome/Safari Print Fix */
+            print-color-adjust: exact; /* Standard Print Fix */
         }
         
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
@@ -157,68 +166,63 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        .footer-credit { text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 20px; border-top: 1px solid #ddd; }
+        .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         /* =========================================
-           PRINT SPECIFIC STYLES (Fixed)
+           PRINT SPECIFIC STYLES (COMPACT MODE)
            ========================================= */
         @media print {
             @page { 
-                margin: 5mm; 
-                size: portrait; /* পেজ লম্বালম্বি থাকবে */
+                margin: 5mm; /* মার্জিন একদম কমিয়ে দেওয়া হয়েছে */
+                size: portrait; 
             }
             
             body { 
                 background-color: white; 
                 padding: 0; 
-                -webkit-print-color-adjust: exact; 
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
             }
             
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
-            /* Header adjustments for print */
-            .company-header { border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 10px; }
-            .company-name { font-size: 2rem; }
+            /* Header Compact */
+            .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+            .company-name { font-size: 1.8rem; } /* নাম একটু ছোট করা হয়েছে জায়গার জন্য */
+            .report-title { font-size: 1rem; margin: 0; }
+            .date-section { font-size: 1rem; margin: 0; }
             
             /* Info Box Borders */
-            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; box-shadow: none; }
-            .total-box { background: white !important; color: black !important; border: 2px solid #000 !important; box-shadow: none; }
+            .info-container { margin-bottom: 10px; }
+            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; }
+            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
+            .total-value { font-size: 1.5rem; }
             
-            /* Table Borders & Layout - Maximize Space */
-            .table { width: 100%; border-collapse: collapse !important; }
-            
+            /* Table Compact Layout */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
-                /* প্যাডিং কমিয়ে দেওয়া হয়েছে যেন বড় ফন্ট ধরে */
-                padding: 2px 4px !important; 
-                /* ফন্ট সাইজ বড় করা হয়েছে */
-                font-size: 11pt !important; 
+                padding: 2px !important; /* প্যাডিং মিনিমাম */
+                font-size: 10pt !important; /* ফন্ট সাইজ স্ট্যান্ডার্ড রাখা হয়েছে */
             }
             
-            .table th { background-color: #ddd !important; color: black !important; }
+            /* Summary Row Color Force */
+            .summary-row td { 
+                background-color: #d1ecff !important; 
+                -webkit-print-color-adjust: exact !important; 
+            }
             
             .color-header { 
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
-                border-bottom: none !important; 
-                font-size: 1.4rem !important; 
-                font-weight: 900 !important; 
-                margin-top: 15px;
+                font-size: 1.1rem !important; 
+                padding: 5px;
+                margin-top: 10px;
             }
             
-            .table-card { border: none; margin-bottom: 15px; break-inside: avoid; }
+            .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             
-            /* Color Fix for Summary Rows */
-            .summary-row td { 
-                background-color: #eaf6ff !important; /* হালকা নীল কালার প্রিন্টেও আসবে */
-                font-weight: 900 !important; 
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            
-            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 20px; }
+            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; }
         }
     </style>
 </head>
@@ -291,7 +295,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART
+#  LOGIC PART (DATA EXTRACTION)
 # ==========================================
 
 def is_potential_size(header):
