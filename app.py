@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FINAL POLISHED)
+#  HTML & CSS TEMPLATES (FINAL FIXED)
 # ==========================================
 
 INDEX_HTML = """
@@ -160,18 +160,18 @@ RESULT_HTML = """
         .footer-credit { text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 20px; border-top: 1px solid #ddd; }
 
         /* =========================================
-           PRINT SPECIFIC STYLES (Fixes Applied)
+           PRINT SPECIFIC STYLES (Fixed)
            ========================================= */
         @media print {
             @page { 
                 margin: 5mm; 
-                size: landscape; /* বেশি কলাম থাকলে Landscape মোড ভালো */
+                size: portrait; /* পেজ লম্বালম্বি থাকবে */
             }
             
             body { 
                 background-color: white; 
                 padding: 0; 
-                -webkit-print-color-adjust: exact; /* কালার প্রিন্ট ফোর্স করা */
+                -webkit-print-color-adjust: exact; 
                 print-color-adjust: exact;
             }
             
@@ -186,12 +186,15 @@ RESULT_HTML = """
             .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; box-shadow: none; }
             .total-box { background: white !important; color: black !important; border: 2px solid #000 !important; box-shadow: none; }
             
-            /* Table Borders Fix - STRICT */
+            /* Table Borders & Layout - Maximize Space */
             .table { width: 100%; border-collapse: collapse !important; }
+            
             .table th, .table td { 
-                border: 1px solid #000 !important; /* কালো বর্ডার ফোর্স করা */
-                padding: 4px !important; /* প্যাডিং কমানো যাতে এক পেজে ধরে */
-                font-size: 10pt !important; /* ফন্ট সাইজ রিডেবল রাখা */
+                border: 1px solid #000 !important; 
+                /* প্যাডিং কমিয়ে দেওয়া হয়েছে যেন বড় ফন্ট ধরে */
+                padding: 2px 4px !important; 
+                /* ফন্ট সাইজ বড় করা হয়েছে */
+                font-size: 11pt !important; 
             }
             
             .table th { background-color: #ddd !important; color: black !important; }
@@ -200,17 +203,19 @@ RESULT_HTML = """
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
                 border-bottom: none !important; 
-                font-size: 1.2rem !important; 
+                font-size: 1.4rem !important; 
                 font-weight: 900 !important; 
                 margin-top: 15px;
             }
             
-            .table-card { border: none; margin-bottom: 20px; break-inside: avoid; }
+            .table-card { border: none; margin-bottom: 15px; break-inside: avoid; }
             
-            /* Summary Rows Color in Print */
+            /* Color Fix for Summary Rows */
             .summary-row td { 
-                background-color: #e0f0f5 !important; /* প্রিন্টে খুব হালকা কালার */
+                background-color: #eaf6ff !important; /* হালকা নীল কালার প্রিন্টেও আসবে */
                 font-weight: 900 !important; 
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             
             .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 20px; }
