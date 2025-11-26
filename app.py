@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (UPDATED DESIGN)
+#  HTML & CSS TEMPLATES
 # ==========================================
 
 INDEX_HTML = """
@@ -103,13 +103,13 @@ RESULT_HTML = """
         /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 30px; overflow: hidden; border: 1px solid #dee2e6; }
         
-        /* COLOR HEADER STYLE UPDATED */
+        /* COLOR HEADER STYLE */
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
             padding: 12px 15px; 
-            font-size: 1.3rem; /* ১ পয়েন্ট বড় করা হয়েছে */
-            font-weight: 900; /* Extra Bold */
+            font-size: 1.3rem; 
+            font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
         }
@@ -127,7 +127,6 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        /* Footer Credit Style */
         .footer-credit { text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 20px; border-top: 1px solid #ddd; }
 
         @media print {
@@ -249,24 +248,19 @@ def sort_sizes(size_list):
 def extract_metadata(first_page_text):
     meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
     
-    # Buyer
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    # Booking Number (Updated Regex to capture full string with slashes/spaces)
-    # এটি "Booking NO" এর পর লাইন ব্রেক পর্যন্ত সব কিছু নেবে
     booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([^\n\r]+)", first_page_text, re.IGNORECASE)
     if booking_match: 
         raw_booking = booking_match.group(1).strip()
-        # যদি "System NO" একই লাইনে থাকে, তবে সেটি বাদ দেওয়া
         if "System" in raw_booking:
             raw_booking = raw_booking.split("System")[0].strip()
         meta['booking'] = raw_booking
 
-    # Style
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
     else:
@@ -277,19 +271,19 @@ def extract_metadata(first_page_text):
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    metadata = {}
+    # ডিফল্ট মেটাডেটা ইনিশিয়ালাইজেশন (Crash প্রতিরোধের জন্য)
+    metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
     order_no = "Unknown"
     
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # বুকিং ফাইল ডিটেকশন (এই ফাইল থেকে মেটাডেটা নেওয়া হবে, টেবিল নয়)
+        # বুকিং ফাইল ডিটেকশন
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
-            return [], metadata # Empty list returns implies no table extraction from booking file
+            return [], metadata 
 
-        # সাধারণ PO ফাইলের লজিক
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
         if order_match: order_no = order_match.group(1)
         else:
@@ -379,26 +373,24 @@ def index():
 
         uploaded_files = request.files.getlist('pdf_files')
         all_data = []
-        final_meta = {'buyer': '-', 'booking': '-', 'style': '-'}
+        final_meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A'}
         
         for file in uploaded_files:
             if file.filename == '': continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             
-            # ডেটা এবং মেটাডেটা দুটোই রিটার্ন করবে
             data, meta = extract_data_dynamic(file_path)
             
-            # যদি ডেটা ফাঁকা হয় কিন্তু মেটাডেটা থাকে, তার মানে এটি বুকিং ফাইল
-            if meta['buyer'] != 'N/A' and not data:
+            # মেটাডেটা আপডেট করা (যদি ভ্যালিড হয়)
+            if meta['buyer'] != 'N/A':
                 final_meta = meta
             
-            # যদি ডেটা থাকে, তার মানে এটি PO ফাইল
             if data:
                 all_data.extend(data)
         
         if not all_data:
-            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found. Make sure you uploaded PO files.")
+            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
 
         df = pd.DataFrame(all_data)
         df['Color'] = df['Color'].str.strip()
