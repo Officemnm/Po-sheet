@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FINAL DESIGN)
+#  HTML & CSS TEMPLATES
 # ==========================================
 
 INDEX_HTML = """
@@ -127,14 +127,6 @@ RESULT_HTML = """
             vertical-align: middle; 
         }
         
-        /* "Total" Header Specific Style */
-        .total-col-header {
-            background-color: #e8f6f3 !important; /* হালকা ব্যাকগ্রাউন্ড */
-            color: #000 !important; /* কালো টেক্সট */
-            font-weight: 900 !important;
-            border: 1px solid #34495e !important;
-        }
-
         /* Data Cells */
         .table td { 
             text-align: center; 
@@ -148,6 +140,14 @@ RESULT_HTML = """
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
+        /* "Total" Header Specific Style */
+        .total-col-header {
+            background-color: #e8f6f3 !important;
+            color: #000 !important;
+            font-weight: 900 !important;
+            border: 1px solid #34495e !important;
+        }
+
         /* Special Column Styles */
         .order-col { 
             font-weight: 800 !important; 
@@ -159,17 +159,15 @@ RESULT_HTML = """
         
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         
-        /* SUMMARY ROW STYLES (Light Blue & Bold Black) */
+        /* SUMMARY ROW STYLES (Light Blue) */
         .summary-row td { 
-            background-color: #d4e6f1 !important; /* হালকা নীল রঙ */
-            color: #000 !important; /* কালো টেক্সট */
+            background-color: #d1ecff !important; 
             font-weight: 800 !important; 
-            border-top: 2px solid #2c3e50 !important; /* একটু গাঢ় বর্ডার */
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            border-top: 2px solid #aaa !important;
+            color: #000 !important;
         }
         
-        .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
+        .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
@@ -177,51 +175,50 @@ RESULT_HTML = """
         .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         /* =========================================
-           PRINT SPECIFIC STYLES
+           PRINT SPECIFIC STYLES (FIXED COLOR)
            ========================================= */
         @media print {
-            @page { 
-                margin: 5mm; 
-                size: portrait; 
-            }
+            @page { margin: 5mm; size: portrait; }
             
             body { 
                 background-color: white; 
                 padding: 0; 
+                /* Force Browser to print colors */
                 -webkit-print-color-adjust: exact !important; 
                 print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
             
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
+            /* Header Compact */
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
             .company-name { font-size: 1.8rem; }
             .report-title { font-size: 1rem; margin: 0; }
             .date-section { font-size: 1rem; margin: 0; }
             
+            /* Info Box Borders */
             .info-container { margin-bottom: 10px; }
             .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             .total-value { font-size: 1.5rem; }
             
+            /* Table Compact Layout */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
                 padding: 2px !important; 
                 font-size: 10pt !important; 
             }
             
-            /* Header Specifics for Print */
-            .total-col-header {
-                background-color: #e8f6f3 !important; 
-                color: #000 !important;
-            }
-
-            /* Summary Row Color Force Print */
+            /* *** MAGIC TRICK FOR SUMMARY ROW COLOR *** */
+            /* box-shadow is often printed even when background-color is stripped */
             .summary-row td { 
-                background-color: #d4e6f1 !important; 
+                background-color: #d1ecff !important; 
+                box-shadow: inset 0 0 0 1000px #d1ecff !important; /* Forces color */
+                font-weight: 900 !important;
                 color: #000 !important;
-                -webkit-print-color-adjust: exact !important; 
+                -webkit-print-color-adjust: exact !important;
             }
             
             .color-header { 
@@ -230,10 +227,15 @@ RESULT_HTML = """
                 font-size: 1.1rem !important; 
                 padding: 5px;
                 margin-top: 10px;
+                box-shadow: inset 0 0 0 1000px #f1f1f1 !important; /* Force header color */
+            }
+            
+            .total-col-header {
+                background-color: #e8f6f3 !important;
+                box-shadow: inset 0 0 0 1000px #e8f6f3 !important;
             }
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
-            
             .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; }
         }
     </style>
@@ -307,7 +309,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (DATA EXTRACTION)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -518,16 +520,14 @@ def index():
             # Apply Classes and Styles
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
             
-            # NEW: Replace Standard Header with Custom Class for "Total"
+            # Replace Standard Header with Custom Class for "Total"
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
-            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>') # Fallback just in case
+            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
-            # Replace Data Cells for Total Column
-            # This is tricky with simple replace, so we rely on CSS styling for the LAST column if possible, 
-            # but for now, let's stick to row styling which is more important.
-            
+            # Apply Summary Rows (Class Injection)
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
+            # Row Injection
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
 
             final_tables.append({'color': color, 'table': table_html})
