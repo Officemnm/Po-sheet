@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (COLOR FIXED)
 # ==========================================
 
 INDEX_HTML = """
@@ -88,7 +88,7 @@ RESULT_HTML = """
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes (Compact) */
+        /* Info Boxes */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 10px 15px; border-radius: 5px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .total-box { background: #2c3e50; color: white; padding: 10px 15px; border-radius: 5px; width: 200px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
@@ -140,14 +140,6 @@ RESULT_HTML = """
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
-        /* "Total" Header Specific Style */
-        .total-col-header {
-            background-color: #e8f6f3 !important;
-            color: #000 !important;
-            font-weight: 900 !important;
-            border: 1px solid #34495e !important;
-        }
-
         /* Special Column Styles */
         .order-col { 
             font-weight: 800 !important; 
@@ -159,15 +151,33 @@ RESULT_HTML = """
         
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         
-        /* SUMMARY ROW STYLES (Light Blue) */
-        .summary-row td { 
-            background-color: #d1ecff !important; 
-            font-weight: 800 !important; 
-            border-top: 2px solid #aaa !important;
+        /* "Total" Header Specific Style */
+        .total-col-header {
+            background-color: #e8f6f3 !important;
             color: #000 !important;
+            font-weight: 900 !important;
+            border: 1px solid #34495e !important;
+        }
+
+        /* ============================================================
+           SUMMARY ROW STYLES (FIXED FOR DISPLAY & PRINT)
+           ============================================================ */
+        
+        /* Bootstrap Override: Force background color on these specific rows */
+        .table-striped tbody tr.summary-row,
+        .table-striped tbody tr.summary-row td { 
+            background-color: #d1ecff !important; /* হালকা আকাশী রঙ */
+            --bs-table-accent-bg: #d1ecff !important; /* Bootstrap 5 Variable Override */
+            color: #000 !important;
+            font-weight: 800 !important;
+            border-top: 2px solid #aaa !important;
         }
         
-        .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
+        .summary-label { 
+            text-align: right !important; 
+            padding-right: 15px !important; 
+            color: #000 !important; 
+        }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
@@ -175,15 +185,18 @@ RESULT_HTML = """
         .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 1rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         /* =========================================
-           PRINT SPECIFIC STYLES (FIXED COLOR)
+           PRINT SPECIFIC STYLES
            ========================================= */
         @media print {
-            @page { margin: 5mm; size: portrait; }
+            @page { 
+                margin: 5mm; 
+                size: portrait; 
+            }
             
             body { 
                 background-color: white; 
                 padding: 0; 
-                /* Force Browser to print colors */
+                /* ব্রাউজারকে ফোর্স করা কালার প্রিন্ট করতে */
                 -webkit-print-color-adjust: exact !important; 
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
@@ -192,33 +205,26 @@ RESULT_HTML = """
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
-            /* Header Compact */
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
             .company-name { font-size: 1.8rem; }
-            .report-title { font-size: 1rem; margin: 0; }
-            .date-section { font-size: 1rem; margin: 0; }
             
-            /* Info Box Borders */
             .info-container { margin-bottom: 10px; }
             .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
-            .total-value { font-size: 1.5rem; }
             
-            /* Table Compact Layout */
+            /* টেবিলের বর্ডার ঠিক রাখা */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
                 padding: 2px !important; 
                 font-size: 10pt !important; 
             }
             
-            /* *** MAGIC TRICK FOR SUMMARY ROW COLOR *** */
-            /* box-shadow is often printed even when background-color is stripped */
-            .summary-row td { 
+            /* কালার প্রিন্ট ফিক্স (Box Shadow Hack) */
+            .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
-                box-shadow: inset 0 0 0 1000px #d1ecff !important; /* Forces color */
-                font-weight: 900 !important;
+                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
                 color: #000 !important;
-                -webkit-print-color-adjust: exact !important;
+                font-weight: 800 !important;
             }
             
             .color-header { 
@@ -227,12 +233,13 @@ RESULT_HTML = """
                 font-size: 1.1rem !important; 
                 padding: 5px;
                 margin-top: 10px;
-                box-shadow: inset 0 0 0 1000px #f1f1f1 !important; /* Force header color */
+                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
             }
             
             .total-col-header {
                 background-color: #e8f6f3 !important;
-                box-shadow: inset 0 0 0 1000px #e8f6f3 !important;
+                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
+                color: #000 !important;
             }
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
@@ -309,7 +316,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART
+#  LOGIC PART (DATA EXTRACTION)
 # ==========================================
 
 def is_potential_size(header):
