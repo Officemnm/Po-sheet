@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (PROFESSIONAL DESIGN)
 # ==========================================
 
 INDEX_HTML = """
@@ -101,17 +101,47 @@ RESULT_HTML = """
         /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 30px; overflow: hidden; border: 1px solid #dee2e6; }
         .color-header { background-color: #e9ecef; color: #333; padding: 10px 15px; font-size: 1rem; font-weight: 700; border-bottom: 1px solid #dee2e6; }
-        .table { margin-bottom: 0; font-size: 0.95rem; }
-        .table th { background-color: #2c3e50; color: white; font-weight: 600; text-align: center; border: 1px solid #34495e; padding: 10px; }
-        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 8px; color: #000; font-weight: 500; }
+        .table { margin-bottom: 0; }
+        
+        /* HEADER (Sizes) STYLING - Bigger & Bold */
+        .table th { 
+            background-color: #2c3e50; 
+            color: white; 
+            font-weight: 900; /* Extra Bold */
+            font-size: 1.1rem; /* 1pt Larger (approx) */
+            text-align: center; 
+            border: 1px solid #34495e; 
+            padding: 10px; 
+            vertical-align: middle;
+        }
+        
+        /* BODY (Data) STYLING - Bold */
+        .table td { 
+            text-align: center; 
+            vertical-align: middle; 
+            border: 1px solid #dee2e6; 
+            padding: 8px; 
+            color: #000; 
+            font-weight: 700; /* Bold Data */
+            font-size: 1rem;
+        }
+        
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
-        /* Specific Column Styles */
-        .order-col { font-weight: bold; text-align: left !important; padding-left: 15px !important; background-color: #fdfdfd; }
-        .total-col { font-weight: 800; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
+        /* P.O NO Column Specific Styles */
+        .order-col { 
+            font-weight: 800 !important; 
+            text-align: left !important; 
+            padding-left: 10px !important; 
+            background-color: #fdfdfd;
+            white-space: nowrap; /* টেক্সট অনুযায়ী ফিট হবে */
+            width: 1%; /* ব্রাউজারকে ফোর্স করবে কলাম ছোট রাখতে */
+        }
+        
+        .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
 
         /* Summary Row Styles (Actual Qty & 3%) */
-        .summary-row td { background-color: #f2f2f2 !important; font-weight: 700; border-top: 2px solid #aaa !important; }
+        .summary-row td { background-color: #f2f2f2 !important; font-weight: 800 !important; border-top: 2px solid #aaa !important; }
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #2c3e50; }
 
         /* Action Buttons */
@@ -130,12 +160,12 @@ RESULT_HTML = """
             .info-box { border: 1px solid #000; border-left: 5px solid #000; box-shadow: none; }
             .total-box { background: white !important; color: black !important; border: 2px solid #000; box-shadow: none; }
             
-            .table th { background-color: #ddd !important; color: black !important; border: 1px solid #000; }
-            .table td { border: 1px solid #000; }
+            .table th { background-color: #ddd !important; color: black !important; border: 1px solid #000; font-weight: 900 !important; font-size: 1.1rem !important; }
+            .table td { border: 1px solid #000; font-weight: 700 !important; }
             .color-header { background-color: #f1f1f1 !important; border: 1px solid #000; border-bottom: none; }
             .table-card { border: none; margin-bottom: 20px; break-inside: avoid; }
             .total-col { background-color: #f0f0f0 !important; color: black !important; }
-            .summary-row td { background-color: #e0e0e0 !important; font-weight: 800 !important; }
+            .summary-row td { background-color: #e0e0e0 !important; font-weight: 900 !important; }
         }
     </style>
 </head>
@@ -215,7 +245,7 @@ RESULT_HTML = """
 
 def is_potential_size(header):
     h = header.strip().upper()
-    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO"]:
+    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
         return False
     if re.match(r'^\d+$', h): return True
     if re.match(r'^\d+[AMYT]$', h): return True
@@ -336,7 +366,7 @@ def extract_data_dynamic(file_path):
                     if final_qtys and color_name:
                          for idx, size in enumerate(sizes):
                             extracted_data.append({
-                                'Order No': order_no,
+                                'P.O NO': order_no, # এখানে নাম পরিবর্তন করা হয়েছে
                                 'Color': color_name,
                                 'Size': size,
                                 'Quantity': final_qtys[idx]
@@ -379,8 +409,11 @@ def index():
 
         for color in unique_colors:
             color_df = df[df['Color'] == color]
-            pivot = color_df.pivot_table(index='Order No', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
             
+            # P.O NO কে ইনডেক্স হিসেবে সেট করা
+            pivot = color_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
+            
+            # সাইজ সর্টিং
             existing_sizes = pivot.columns.tolist()
             sorted_sizes = sort_sizes(existing_sizes)
             pivot = pivot[sorted_sizes]
@@ -389,46 +422,37 @@ def index():
             pivot['Total'] = pivot.sum(axis=1)
             grand_total_qty += pivot['Total'].sum()
 
-            # ==========================================
-            # ১. নতুন দুটি রো যোগ করা (Actual Qty & 3%)
-            # ==========================================
-            
-            # সব কলামের যোগফল (Actual Qty)
+            # ২. নতুন দুটি রো যোগ করা (Actual Qty & 3%)
             actual_qty = pivot.sum()
             actual_qty.name = 'Actual Qty'
             
-            # 3% যোগফল (Actual Qty + 3%) - রাউন্ড করা
             qty_plus_3 = (actual_qty * 1.03).round().astype(int)
             qty_plus_3.name = '3% Order Qty'
             
-            # ডেটাফ্রেমে রো যোগ করা
             pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
             
-            # Order No কলাম রিসেট
+            # ৩. টেবিল রিসেট করা (যাতে P.O NO কলাম হিসেবে আসে)
             pivot = pivot.reset_index()
-            # ইনডেক্স কলামের নাম ঠিক করা ('index' থেকে 'Order No' করা)
-            pivot = pivot.rename(columns={'index': 'Order No'})
+            # কলামের নাম P.O NO রাখা
+            pivot = pivot.rename(columns={'index': 'P.O NO'})
+            
+            # ৪. Size নামটির হেডার রিমুভ করা (যাতে শুধু P.O NO এবং সাইজগুলো থাকে)
+            pivot.columns.name = None
 
-            # ==========================================
-            # ২. HTML জেনারেশন ও স্টাইলিং
-            # ==========================================
+            # ৫. HTML জেনারেশন
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # স্টাইলিং ইনজেক্ট করা
-            # Order No কলামের স্টাইল
+            # ৬. স্টাইলিং ক্লাস ইনজেক্ট করা
+            # P.O NO কলাম (১ম কলাম)
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
-            # Total হেডার স্টাইল
+            
+            # Total হেডার
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col">Total</th>')
             
-            # নতুন দুটি রো (Actual Qty & 3%) হাইলাইট করা (CSS ক্লাস যোগ করা)
+            # Summary Rows হাইলাইট
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
-            
-            # রো গুলোকে বোল্ড এবং কালার করার জন্য tr ট্যাগ মডিফাই
-            # (সিম্পল স্ট্রিং রিপ্লেসমেন্ট দিয়ে row ক্লাস যোগ করা কঠিন, তাই আমরা td স্টাইল দিয়েই কাজ চালিয়েছি CSS এ)
-            # CSS এ .summary-row এর বদলে এখন .summary-label এর প্যারেন্ট tr কে টার্গেট করা যাবে না সহজে CSS এ (has ছাড়া)।
-            # তাই আমরা সরাসরি রিপ্লেস করে ক্লাস বসিয়ে দেব।
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
 
             final_tables.append({'color': color, 'table': table_html})
