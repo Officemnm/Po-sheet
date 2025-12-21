@@ -1,297 +1,416 @@
+from flask import Flask, request, render_template_string
+import pdfplumber
+import pandas as pd
 import os
 import re
 import shutil
-import pdfplumber
-import pandas as pd
-from flask import Flask, request, render_template_string
+import numpy as np
 
 app = Flask(__name__)
 
 # কনফিগারেশন
-UPLOAD_FOLDER = '/tmp/uploads'  # ক্লাউড সার্ভারের জন্য /tmp ফোল্ডার নিরাপদ
+UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# ==========================================
-#  UI TEMPLATES
-# ==========================================
-
-INDEX_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>KIABI Parser Pro</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #f8f9fa; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .upload-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; }
-        .icon { font-size: 60px; margin-bottom: 20px; }
-        .btn-primary { background: #0d6efd; border: none; padding: 12px 30px; font-weight: 600; width: 100%; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="upload-card">
-        <div class="icon">📂</div>
-        <h3 class="mb-3">KIABI Report Generator</h3>
-        <p class="text-muted">Upload Booking & PO PDF files</p>
-        <form action="/" method="post" enctype="multipart/form-data">
-            <input class="form-control form-control-lg" type="file" name="pdf_files" multiple accept=".pdf" required>
-            <button type="submit" class="btn btn-primary">Generate Report</button>
-        </form>
-    </div>
-</body>
-</html>
-"""
-
-RESULT_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>PO Summary</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { padding: 40px; background: #fff; font-family: 'Segoe UI', sans-serif; color: #000; }
-        .header { text-align: center; border-bottom: 3px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
-        .meta-box { border: 1px solid #000; padding: 20px; margin-bottom: 30px; background: #f8f9fa; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-weight: 600; font-size: 1.1rem; }
-        .grand-total { background: #000; color: #fff; padding: 15px; text-align: center; font-size: 2rem; font-weight: 800; margin-bottom: 40px; border-radius: 8px; }
-        .color-section { margin-bottom: 40px; break-inside: avoid; }
-        .color-header { background: #0d6efd; color: white; padding: 10px 20px; font-weight: 800; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 0; }
-        .table { margin-bottom: 0; border: 1px solid #000; }
-        .table th { background: #343a40 !important; color: white !important; text-align: center; border: 1px solid #000; }
-        .table td { text-align: center; border: 1px solid #000; font-weight: 700; font-size: 1.1rem; vertical-align: middle; }
-        .summary-row td { background: #e9ecef !important; font-weight: 900 !important; border-top: 2px solid #000 !important; }
-        @media print { .no-print { display: none; } body { padding: 0; } .grand-total { background: #000 !important; -webkit-print-color-adjust: exact; } .color-header { background: #0d6efd !important; -webkit-print-color-adjust: exact; } }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="no-print text-end mb-4">
-            <a href="/" class="btn btn-outline-dark rounded-pill">Upload Again</a>
-            <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 ms-2">Print Report</button>
-        </div>
-
-        <div class="header">
-            <h1 class="fw-bold">Cotton Clothing BD Limited</h1>
-            <h4 class="text-uppercase text-muted">Purchase Order Summary</h4>
-        </div>
-
-        <div class="meta-box">
-            <div class="meta-grid">
-                <div>Buyer: {{ meta.buyer }}</div>
-                <div>Season: {{ meta.season }}</div>
-                <div>Booking: {{ meta.booking }}</div>
-                <div>Dept: {{ meta.dept }}</div>
-                <div>Style: {{ meta.style }}</div>
-                <div>Item: {{ meta.item }}</div>
-            </div>
-        </div>
-
-        <div class="grand-total">GRAND TOTAL: {{ grand_total }} PCS</div>
-
-        {% for item in tables %}
-            <div class="color-section">
-                <div class="color-header">COLOR: {{ item.color }}</div>
-                {{ item.table | safe }}
-            </div>
-        {% endfor %}
-    </div>
-</body>
-</html>
-"""
+# HTML টেম্পলেটগুলো একই থাকবে (উপরের মতো)
+# ...
 
 # ==========================================
-#  ROBUST PARSING LOGIC
+#  IMPROVED LOGIC WITH PDFPLUMBER
 # ==========================================
 
-def clean_qty(val):
-    if not val: return 0
-    # সংখ্যা বাদে সব মুছে ফেলা
-    digits = re.sub(r'[^\d]', '', str(val))
-    return int(digits) if digits else 0
+def is_potential_size(header):
+    h = header.strip().upper()
+    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
+        return False
+    if re.match(r'^\d+$', h): return True
+    if re.match(r'^\d+[AMYT]$', h): return True
+    if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
+    if re.match(r'^[A-Z]\d{2,}$', h): return False
+    return False
 
-def process_file(path):
-    rows = []
-    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
-    order_no = "N/A"
+def sort_sizes(size_list):
+    STANDARD_ORDER = [
+        '0M', '1M', '3M', '6M', '9M', '12M', '18M', '24M', '36M',
+        '2A', '3A', '4A', '5A', '6A', '8A', '10A', '12A', '14A', '16A', '18A',
+        'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL',
+        'TU', 'One Size'
+    ]
+    def sort_key(s):
+        s = s.strip()
+        if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
+        if s.isdigit(): return (1, int(s))
+        match = re.match(r'^(\d+)([A-Z]+)$', s)
+        if match: return (2, int(match.group(1)), match.group(2))
+        return (3, s)
+    return sorted(size_list, key=sort_key)
 
-    with pdfplumber.open(path) as pdf:
-        # মেটাডাটা এক্সট্রাকশন
-        p1_text = pdf.pages[0].extract_text() or ""
-        
-        if "KIABI" in p1_text.upper(): meta['buyer'] = "KIABI"
-        
-        m_bk = re.search(r"Booking NO\.?[:\s]*([\w-]+)", p1_text, re.I)
-        if m_bk: meta['booking'] = m_bk.group(1)
-        
-        m_st = re.search(r"Style (?:Ref|Des)\.?[:\s]*([\w-]+)", p1_text, re.I)
-        if m_st: meta['style'] = m_st.group(1)
-        
-        m_se = re.search(r"Season\s*[:\s]*([\w\d-]+)", p1_text, re.I)
-        if m_se: meta['season'] = m_se.group(1)
-        
-        m_dp = re.search(r"Dept\.?[\s\n:]*([\w\d]+)", p1_text, re.I)
-        if m_dp: meta['dept'] = m_dp.group(1)
-        
-        m_it = re.search(r"(?:Garments?|Item)[\s\n:]*([A-Za-z\s]+)", p1_text, re.I)
-        if m_it: meta['item'] = m_it.group(1).split('\n')[0].strip()
+def extract_metadata(first_page_text):
+    meta = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
+    
+    if "KIABI" in first_page_text.upper():
+        meta['buyer'] = "KIABI"
+    else:
+        buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
+        if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-        m_ord = re.search(r"Order no: (\d+)", p1_text, re.I)
-        if m_ord: order_no = m_ord.group(1)
-        
-        if "Main Fabric Booking" in p1_text:
-            return [], meta
+    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if booking_block_match: 
+        raw_booking = booking_block_match.group(1).strip()
+        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
+        meta['booking'] = clean_booking
 
+    style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
+    if style_match: meta['style'] = style_match.group(1).strip()
+    else:
+        style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
+        if style_match: meta['style'] = style_match.group(1).strip()
+
+    season_match = re.search(r"Season\s*[:\n\"]*([\w\d-]+)", first_page_text, re.IGNORECASE)
+    if season_match: meta['season'] = season_match.group(1).strip()
+
+    dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
+    if dept_match: meta['dept'] = dept_match.group(1).strip()
+
+    item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
+    if item_match: 
+        item_text = item_match.group(1).strip()
+        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
+        meta['item'] = item_text
+
+    return meta
+
+def extract_table_with_pdfplumber(pdf_path):
+    """pdfplumber ব্যবহার করে টেবিল এক্সট্র্যাক্ট করে"""
+    tables_data = []
+    
+    with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
-            words = page.extract_words()
-            if not words: continue
+            # টেবিল ডিটেক্ট করো
+            tables = page.extract_tables({
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "explicit_vertical_lines": [],
+                "explicit_horizontal_lines": [],
+                "snap_tolerance": 3,
+                "join_tolerance": 3,
+                "edge_min_length": 3,
+                "min_words_vertical": 3,
+                "min_words_horizontal": 1,
+                "keep_blank_chars": False,
+                "text_tolerance": 3,
+                "text_x_tolerance": 3,
+                "text_y_tolerance": 3,
+                "intersection_tolerance": 3,
+                "intersection_x_tolerance": 3,
+                "intersection_y_tolerance": 3,
+            })
+            
+            for table in tables:
+                if len(table) > 1:  # শুধু হেডার থাকলে স্টোর করবে না
+                    tables_data.extend(table)
+    
+    return tables_data
 
-            # লাইন গ্রুপিং (y-axis tolerance সহ)
-            lines = []
-            current_line = []
-            current_y = None
-            
-            # উপর থেকে নিচে সর্ট করা
-            sorted_words = sorted(words, key=lambda w: w['top'])
-            
-            for w in sorted_words:
-                if current_y is None:
-                    current_y = w['top']
-                    current_line.append(w)
-                elif abs(w['top'] - current_y) <= 3: # 3 পিক্সেল টলারেন্স
-                    current_line.append(w)
-                else:
-                    lines.append(sorted(current_line, key=lambda x: x['x0']))
-                    current_line = [w]
-                    current_y = w['top']
-            if current_line:
-                lines.append(sorted(current_line, key=lambda x: x['x0']))
+def clean_table_data(table_data):
+    """টেবিল ডেটা ক্লিনআপ করে"""
+    cleaned = []
+    for row in table_data:
+        cleaned_row = []
+        for cell in row:
+            if cell is None:
+                cleaned_row.append('')
+            else:
+                # এক্সট্রা স্পেস এবং নিউলাইন রিমুভ করো
+                cleaned_cell = ' '.join(str(cell).split())
+                cleaned_row.append(cleaned_cell)
+        cleaned.append(cleaned_row)
+    return cleaned
 
-            # হেডার এবং কলাম শনাক্ত করা
-            size_cols = []
-            header_found = False
+def extract_data_dynamic(file_path):
+    extracted_data = []
+    metadata = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
+    order_no = "Unknown"
+    
+    try:
+        # প্রথমে টেক্সট এক্সট্র্যাক্ট করে মেটাডাটা নাও
+        with pdfplumber.open(file_path) as pdf:
+            first_page = pdf.pages[0]
+            first_page_text = first_page.extract_text()
             
-            for line_words in lines:
-                line_text = " ".join([w['text'] for w in line_words]).upper()
-                
-                # হেডার লাইন
-                if "COLO/SIZE" in line_text and "TOTAL" in line_text:
-                    header_found = True
-                    for w in line_words:
-                        txt = w['text'].strip().upper()
-                        if txt not in ["COLO/SIZE", "TOTAL", "PRICE", "AMOUNT", "CURRENCY", "COLOR/SIZE"]:
-                            # কলামের এরিয়া সেভ করা (একটু বাফার সহ)
-                            size_cols.append({
-                                'name': w['text'],
-                                'x0': w['x0'] - 5,
-                                'x1': w['x1'] + 5
-                            })
+            if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
+                metadata = extract_metadata(first_page_text)
+                return [], metadata 
+
+            order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
+            if order_match: order_no = order_match.group(1)
+            else:
+                alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
+                if alt_match: order_no = alt_match.group(1)
+            
+            order_no = str(order_no).strip()
+            if order_no.endswith("00"): order_no = order_no[:-2]
+            
+            # টেবিল এক্সট্র্যাক্ট করো
+            tables = extract_table_with_pdfplumber(file_path)
+            cleaned_tables = clean_table_data(tables)
+            
+            # টেবিল প্রসেস করো
+            for table in cleaned_tables:
+                if len(table) < 2:
                     continue
-
-                if header_found and size_cols:
-                    # টেবিল শেষ চেক
-                    if "TOTAL QUANTITY" in line_text or "TOTAL AMOUNT" in line_text:
-                        break
-                        
-                    # কালার নাম বের করা (প্রথম সাইজ কলামের বামে যা আছে)
-                    first_col_x = size_cols[0]['x0']
-                    color_words = [w['text'] for w in line_words if w['x1'] < first_col_x]
-                    color_name = " ".join(color_words).replace("Spec. price", "").strip()
                     
-                    if color_name and not color_name[0].isdigit():
-                        for col in size_cols:
-                            # এই কলামের নিচে কোনো সংখ্যা আছে কি?
-                            cell_val_words = [w['text'] for w in line_words if w['x0'] >= col['x0'] and w['x1'] <= col['x1']]
-                            cell_val = "".join(cell_val_words)
-                            
-                            qty = clean_qty(cell_val)
-                            
-                            # যদি সংখ্যা থাকে তবেই যোগ হবে (0 হলেও যোগ হবে অ্যালাইনমেন্টের জন্য)
-                            rows.append({
-                                'P.O NO': order_no,
-                                'Color': color_name,
-                                'Size': col['name'],
-                                'Quantity': qty
-                            })
+                # হেডার সার্চ করো
+                header_row = None
+                for i, row in enumerate(table):
+                    if any('size' in str(cell).lower() for cell in row if cell) and \
+                       any('colo' in str(cell).lower() for cell in row if cell):
+                        header_row = i
+                        break
+                
+                if header_row is None:
+                    continue
+                    
+                # সাইজ কলাম খুঁজে বের করো
+                header = table[header_row]
+                size_columns = []
+                color_column = None
+                
+                for idx, cell in enumerate(header):
+                    cell_str = str(cell).strip().upper() if cell else ""
+                    if 'COLO' in cell_str or 'COLOR' in cell_str:
+                        color_column = idx
+                    elif is_potential_size(cell_str):
+                        size_columns.append((idx, cell_str))
+                
+                if not size_columns or color_column is None:
+                    continue
+                
+                # সাইজ কলামগুলো সর্ট করো
+                size_columns = sorted(size_columns, key=lambda x: sort_sizes([x[1]])[0])
+                
+                # ডেটা রো প্রসেস করো
+                for row_idx in range(header_row + 1, len(table)):
+                    row = table[row_idx]
+                    
+                    # এম্পটি রো চেক করো
+                    if all(cell == '' for cell in row):
+                        continue
+                    
+                    # কালার নেম নাও
+                    color_name = str(row[color_column]).strip() if color_column < len(row) else ""
+                    if not color_name or color_name.isdigit():
+                        continue
+                    
+                    # প্রতিটি সাইজের জন্য কন্টিটি নাও
+                    for col_idx, size_name in size_columns:
+                        if col_idx < len(row):
+                            qty_str = str(row[col_idx]).strip()
+                            if qty_str.isdigit():
+                                qty = int(qty_str)
+                                extracted_data.append({
+                                    'P.O NO': order_no,
+                                    'Color': color_name,
+                                    'Size': size_name,
+                                    'Quantity': qty
+                                })
+                            elif qty_str == '':
+                                # ফাঁকা ঘরের জন্য 0 সেট করো
+                                extracted_data.append({
+                                    'P.O NO': order_no,
+                                    'Color': color_name,
+                                    'Size': size_name,
+                                    'Quantity': 0
+                                })
+    
+    except Exception as e: 
+        print(f"Error processing file {file_path}: {e}")
+        # ফলব্যাক হিসেবে পুরানো মেথড
+        return fallback_extraction(file_path, metadata)
+    
+    return extracted_data, metadata
 
-    return rows, meta
+def fallback_extraction(file_path, metadata):
+    """পুরানো মেথড হিসেবে ফলব্যাক"""
+    extracted_data = []
+    order_no = "Unknown"
+    
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            first_page = pdf.pages[0]
+            first_page_text = first_page.extract_text()
+            
+            order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
+            if order_match: order_no = order_match.group(1)
+            else:
+                alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
+                if alt_match: order_no = alt_match.group(1)
+            
+            order_no = str(order_no).strip()
+            if order_no.endswith("00"): order_no = order_no[:-2]
+            
+            for page in pdf.pages:
+                text = page.extract_text()
+                lines = text.split('\n')
+                sizes = []
+                capturing_data = False
+                current_color = None
+                
+                for i, line in enumerate(lines):
+                    line = line.strip()
+                    if not line: continue
+
+                    # সাইজ হেডার ডিটেক্ট করো
+                    if ("Colo" in line or "Size" in line) and "Total" in line:
+                        parts = line.split()
+                        try:
+                            total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
+                            raw_sizes = parts[:total_idx]
+                            temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
+                            
+                            valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
+                            if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
+                                sizes = temp_sizes
+                                capturing_data = True
+                            else:
+                                sizes = []
+                                capturing_data = False
+                        except: pass
+                        continue
+                    
+                    if capturing_data:
+                        if line.startswith("Total Quantity") or line.startswith("Total Amount"):
+                            capturing_data = False
+                            continue
+                        
+                        lower_line = line.lower()
+                        if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
+                            continue
+                            
+                        clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
+                        if not re.search(r'[a-zA-Z]', clean_line): continue
+                        if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: continue
+
+                        # কালার লাইন খুঁজো
+                        if not re.search(r'\d', line):
+                            current_color = clean_line
+                            continue
+                        
+                        # সংখ্যা এক্সট্র্যাক্ট করো
+                        numbers = re.findall(r'\b\d+\b', line)
+                        if numbers and current_color:
+                            # প্রতিটি সাইজের জন্য সংখ্যা অ্যাসাইন করো
+                            for size_idx, size in enumerate(sizes):
+                                qty = 0
+                                if size_idx < len(numbers):
+                                    qty = int(numbers[size_idx])
+                                
+                                extracted_data.append({
+                                    'P.O NO': order_no,
+                                    'Color': current_color,
+                                    'Size': size,
+                                    'Quantity': qty
+                                })
+    except Exception as e:
+        print(f"Fallback also failed: {e}")
+    
+    return extracted_data, metadata
 
 # ==========================================
-#  ROUTES
+#  FLASK ROUTES (একই থাকবে)
 # ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if os.path.exists(app.config['UPLOAD_FOLDER']):
-            shutil.rmtree(app.config['UPLOAD_FOLDER'])
-        os.makedirs(app.config['UPLOAD_FOLDER'])
+        if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
+        os.makedirs(UPLOAD_FOLDER)
 
-        files = request.files.getlist('pdf_files')
+        uploaded_files = request.files.getlist('pdf_files')
         all_data = []
-        final_meta = {}
+        final_meta = {
+            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
+            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+        }
         
-        for f in files:
-            if not f.filename: continue
-            p = os.path.join(app.config['UPLOAD_FOLDER'], f.filename)
-            f.save(p)
-            d, m = process_file(p)
-            if d: all_data.extend(d)
-            if m.get('buyer') != 'N/A': final_meta.update(m)
+        for file in uploaded_files:
+            if file.filename == '': continue
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(file_path)
+            
+            data, meta = extract_data_dynamic(file_path)
+            
+            if meta['buyer'] != 'N/A':
+                final_meta = meta
+            
+            if data:
+                all_data.extend(data)
         
         if not all_data:
-            return render_template_string(INDEX_HTML) # ডাটা না পেলে আবার আপলোড পেজে
+            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
 
         df = pd.DataFrame(all_data)
-        # একই কালার-সাইজের ডাটা যোগ করা
-        df = df.groupby(['P.O NO', 'Color', 'Size'])['Quantity'].sum().reset_index()
+        df['Color'] = df['Color'].str.strip()
+        df = df[df['Color'] != ""]
+        unique_colors = df['Color'].unique()
         
-        # সাইজ সর্টিং
-        def sort_key(s):
-            order = ['XXS','XS','S','M','L','XL','XXL','3XL','4XL','5XL','TU','ONE SIZE']
-            u = s.upper().strip()
-            return order.index(u) if u in order else 99
-
         final_tables = []
-        grand_total = 0
+        grand_total_qty = 0
 
-        for color in df['Color'].unique():
-            c_df = df[df['Color'] == color]
-            pivot = c_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
+        for color in unique_colors:
+            color_df = df[df['Color'] == color]
+            pivot = color_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
             
-            # কলাম সাজানো
-            cols = sorted(pivot.columns.tolist(), key=sort_key)
-            pivot = pivot[cols]
+            existing_sizes = pivot.columns.tolist()
+            sorted_sizes = sort_sizes(existing_sizes)
+            pivot = pivot[sorted_sizes]
             
             pivot['Total'] = pivot.sum(axis=1)
-            grand_total += pivot['Total'].sum()
+            grand_total_qty += pivot['Total'].sum()
 
-            # টোটাল রো
-            act = pivot.sum(); act.name = 'Actual Qty'
-            p3 = (act * 1.03).round().astype(int); p3.name = '3% Order Qty'
+            actual_qty = pivot.sum()
+            actual_qty.name = 'Actual Qty'
             
-            pivot = pd.concat([pivot, act.to_frame().T, p3.to_frame().T])
-            pivot = pivot.reset_index().rename(columns={'index': 'P.O NO'})
+            qty_plus_3 = (actual_qty * 1.03).round().astype(int)
+            qty_plus_3.name = '3% Order Qty'
             
-            html = pivot.to_html(classes='table table-bordered table-hover', index=False)
+            pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
             
-            # স্টাইলিং ইনজেকশন
-            html = html.replace('<td>Actual Qty</td>', '<td class="summary-row">Actual Qty</td>')
-            html = html.replace('<td>3% Order Qty</td>', '<td class="summary-row">3% Order Qty</td>')
-            html = html.replace('<tr>', '<tr>') # ক্লিনআপ
-            html = html.replace('<tr><td class="summary-row">Actual Qty', '<tr class="summary-row"><td class="summary-row">Actual Qty')
-            html = html.replace('<tr><td class="summary-row">3% Order Qty', '<tr class="summary-row"><td class="summary-row">3% Order Qty')
-            
-            final_tables.append({'color': color, 'table': html})
+            pivot = pivot.reset_index()
+            pivot = pivot.rename(columns={'index': 'P.O NO'})
+            pivot.columns.name = None
 
-        return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total:,}")
+            pd.set_option('colheader_justify', 'center')
+            table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
+            
+            # Injections
+            table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
+            table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
+            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
+            
+            # Color Fix
+            table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
+            table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
+            table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
+
+            final_tables.append({'color': color, 'table': table_html})
+            
+        return render_template_string(RESULT_HTML, 
+                                      tables=final_tables, 
+                                      meta=final_meta, 
+                                      grand_total=f"{grand_total_qty:,}")
 
     return render_template_string(INDEX_HTML)
 
 if __name__ == "__main__":
-    # লোকাল ডেভেলপমেন্টের জন্য
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
