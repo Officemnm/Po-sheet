@@ -3,3 +3,4 @@ pypdf
 pandas
 numpy
 gunicorn
+pip install pdfplumber pandas flask numpy
