@@ -2,4 +2,4 @@ Flask
 pdfplumber
 pandas
 numpy
-
+gunicorn
