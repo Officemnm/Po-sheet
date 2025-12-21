@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template_string
-import pypdf
+import pdfplumber
 import pandas as pd
 import os
 import re
@@ -30,12 +30,12 @@ INDEX_HTML = """
     <style>
         body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .main-card { border: none; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        .card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0 !important; padding: 25px; }
-        .btn-upload { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 12px 30px; font-weight: 600; transition: all 0.3s; }
-        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4); }
-        .upload-icon { font-size: 3rem; color: #764ba2; margin-bottom: 20px; }
+        .card-header { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; border-radius: 15px 15px 0 0 !important; padding: 25px; }
+        .btn-upload { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); border: none; padding: 12px 30px; font-weight: 600; transition: all 0.3s; }
+        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(30, 58, 138, 0.4); }
+        .upload-icon { font-size: 3rem; color: #1e3a8a; margin-bottom: 20px; }
         .file-input-wrapper { border: 2px dashed #cbd5e0; border-radius: 10px; padding: 40px; background: #f8fafc; transition: all 0.3s; }
-        .file-input-wrapper:hover { border-color: #764ba2; background: #fff; }
+        .file-input-wrapper:hover { border-color: #1e3a8a; background: #fff; }
         .footer-credit { margin-top: 30px; font-size: 0.8rem; color: #6c757d; }
     </style>
 </head>
@@ -45,7 +45,7 @@ INDEX_HTML = """
             <div class="col-md-8">
                 <div class="card main-card">
                     <div class="card-header text-center">
-                        <h2 class="mb-0">PDF Report Generator</h2>
+                        <h2 class="mb-0">PDF Report Generator v2.0</h2>
                         <p class="mb-0 opacity-75">Cotton Clothing BD Limited</p>
                     </div>
                     <div class="card-body p-5 text-center">
@@ -56,10 +56,10 @@ INDEX_HTML = """
                                 <p class="text-muted small">Select both Booking File & PO Files together</p>
                                 <input class="form-control form-control-lg mt-3" type="file" name="pdf_files" multiple accept=".pdf" required>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Report</button>
+                            <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Accurate Report</button>
                         </form>
                         <div class="footer-credit">
-                            Report Created By <strong>Mehedi Hasan</strong>
+                            Report Engine Optimized for Empty Cells | Created By <strong>Mehedi Hasan</strong>
                         </div>
                     </div>
                 </div>
@@ -81,289 +81,81 @@ RESULT_HTML = """
     <style>
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
-        
-        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
-        .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
-        .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
-        
-        /* Info Boxes (Text Size Increased +3pt approx) */
+        .company-name { font-size: 2.2rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; letter-spacing: 1px; }
+        .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; }
+        .date-section { font-size: 1.2rem; font-weight: 800; color: #000; }
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
-        
-        .info-box { 
-            background: white; 
-            border: 1px solid #ddd; 
-            border-left: 5px solid #2c3e50; 
-            padding: 10px 15px; 
-            border-radius: 5px; 
-            flex: 2; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .total-box { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 10px 15px; 
-            border-radius: 5px; 
-            width: 240px; /* Width increased for bigger text */
-            text-align: right; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
-        }
-        
-        /* Increased Font Size for Info Items */
-        .info-item { 
-            margin-bottom: 6px; 
-            font-size: 1.3rem; /* Increased (~13pt/14pt) */
-            font-weight: 700; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-        }
-        
-        .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
-        .info-value { font-weight: 800; color: #000; }
-        
-        .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
-
-        /* Table Styles */
-        .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
-        
-        .color-header { 
-            background-color: #e9ecef; 
-            color: #2c3e50; 
-            padding: 10px 12px; 
-            font-size: 1.5rem; /* Increased Header Size */
-            font-weight: 900; 
-            border-bottom: 1px solid #dee2e6; 
-            text-transform: uppercase;
-        }
-
-        .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
-        
-        /* Table Header Cells (Bigger & Bolder) */
-        .table th { 
-            background-color: #2c3e50; 
-            color: white; 
-            font-weight: 900; 
-            font-size: 1.2rem; /* Increased (~13-14pt) */
-            text-align: center; 
-            border: 1px solid #34495e; 
-            padding: 8px 4px; 
-            vertical-align: middle; 
-        }
-        
-        /* Table Data Cells (Bigger & Bolder) */
-        .table td { 
-            text-align: center; 
-            vertical-align: middle; 
-            border: 1px solid #dee2e6; 
-            padding: 6px 3px; 
-            color: #000; 
-            font-weight: 800; /* Extra Bold */
-            font-size: 1.15rem; /* Increased (~13pt) */
-        }
-        
-        .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
-        
-        .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
-        .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
-        .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
-
-        /* SUMMARY ROW STYLES (Light Blue & Bold) */
-        .table-striped tbody tr.summary-row,
-        .table-striped tbody tr.summary-row td { 
-            background-color: #d1ecff !important; 
-            --bs-table-accent-bg: #d1ecff !important; 
-            color: #000 !important;
-            font-weight: 900 !important; /* Extra Bold */
-            border-top: 2px solid #aaa !important;
-            font-size: 1.2rem !important; /* Even Bigger for Summary */
-        }
-        
-        .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
-
-        .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
-        
-        /* Footer Smaller (-1pt) */
-        .footer-credit { 
-            text-align: center; 
-            margin-top: 30px; 
-            margin-bottom: 20px; 
-            font-size: 0.8rem; /* Reduced Size (~9pt) */
-            color: #2c3e50; 
-            padding-top: 10px; 
-            border-top: 1px solid #ddd; 
-        }
-
-        /* =========================================
-           PRINT SPECIFIC STYLES
-           ========================================= */
-        @media print {
-            @page { margin: 5mm; size: portrait; }
-            
-            body { 
-                background-color: white; 
-                padding: 0; 
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            
-            .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
-            .no-print { display: none !important; }
-            
-            .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
-            /* Header Size Unchanged in Print */
-            .company-name { font-size: 1.8rem; } 
-            
-            .info-container { margin-bottom: 10px; }
-            .info-box { 
-                border: 1px solid #000 !important; 
-                border-left: 5px solid #000 !important; 
-                padding: 5px 10px; 
-                display: grid; 
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
-            
-            /* Info Items Print Size (+3pt) */
-            .info-item { font-size: 13pt !important; font-weight: 800 !important; }
-            
-            /* Table Print Size (+3pt) */
-            .table th, .table td { 
-                border: 1px solid #000 !important; 
-                padding: 2px !important; 
-                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
-                font-weight: 800 !important;
-            }
-            
-            /* Summary Row Color Force */
-            .table-striped tbody tr.summary-row td { 
-                background-color: #d1ecff !important; 
-                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
-                color: #000 !important;
-                font-weight: 900 !important;
-            }
-            
-            .color-header { 
-                background-color: #f1f1f1 !important; 
-                border: 1px solid #000 !important; 
-                font-size: 1.4rem !important; /* Bigger */
-                font-weight: 900 !important;
-                padding: 5px;
-                margin-top: 10px;
-                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
-            }
-            
-            .total-col-header {
-                background-color: #e8f6f3 !important;
-                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
-                color: #000 !important;
-            }
-            
-            .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
-            
-            /* Footer Smaller */
-            .footer-credit { 
-                display: block !important; 
-                color: black; 
-                border-top: 1px solid #000; 
-                margin-top: 10px; 
-                font-size: 8pt !important; /* Smaller */
-            }
-        }
+        .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #1e3a8a; padding: 15px; border-radius: 5px; flex: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .total-box { background: #1e3a8a; color: white; padding: 15px; border-radius: 5px; width: 260px; text-align: right; display: flex; flex-direction: column; justify-content: center; }
+        .info-item { font-size: 1.25rem; font-weight: 700; color: #000; margin-bottom: 5px; }
+        .info-label { color: #555; width: 95px; display: inline-block; font-weight: 800; }
+        .total-value { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+        .color-header { background-color: #1e3a8a; color: white; padding: 12px; font-size: 1.6rem; font-weight: 900; text-transform: uppercase; }
+        .table th { background-color: #334155; color: white; font-weight: 900; font-size: 1.1rem; text-align: center; vertical-align: middle; border: 1px solid #000; }
+        .table td { text-align: center; vertical-align: middle; border: 1px solid #ccc; padding: 8px; font-weight: 800; font-size: 1.1rem; color: #000; }
+        .summary-row td { background-color: #e2e8f0 !important; font-weight: 900 !important; border-top: 2px solid #000 !important; }
+        .order-col { background-color: #f8fafc; font-weight: 900 !important; }
+        .total-col { background-color: #f1f5f9 !important; font-weight: 900; color: #1e3a8a !important; }
+        @media print { .no-print { display: none !important; } .container { max-width: 100% !important; } body { background: white; } }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="action-bar no-print">
-            <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Upload New</a>
-            <button onclick="window.print()" class="btn btn-print">🖨️ Print Report</button>
+        <div class="action-bar no-print mb-4 d-flex justify-content-end gap-2">
+            <a href="/" class="btn btn-outline-primary rounded-pill px-4">Upload New</a>
+            <button onclick="window.print()" class="btn btn-primary rounded-pill px-4">🖨️ Print Report</button>
         </div>
 
         <div class="company-header">
             <div class="company-name">Cotton Clothing BD Limited</div>
-            <div class="report-title">Purchase Order Summary</div>
+            <div class="report-title">Precise Purchase Order Summary</div>
             <div class="date-section">Date: <span id="date"></span></div>
         </div>
-
-        {% if message %}
-            <div class="alert alert-warning text-center no-print">{{ message }}</div>
-        {% endif %}
 
         {% if tables %}
             <div class="info-container">
                 <div class="info-box">
                     <div>
-                        <div class="info-item"><span class="info-label">Buyer:</span> <span class="info-value">{{ meta.buyer }}</span></div>
-                        <div class="info-item"><span class="info-label">Booking:</span> <span class="info-value">{{ meta.booking }}</span></div>
-                        <div class="info-item"><span class="info-label">Style:</span> <span class="info-value">{{ meta.style }}</span></div>
+                        <div class="info-item"><span class="info-label">Buyer:</span> {{ meta.buyer }}</div>
+                        <div class="info-item"><span class="info-label">Booking:</span> {{ meta.booking }}</div>
+                        <div class="info-item"><span class="info-label">Style:</span> {{ meta.style }}</div>
                     </div>
                     <div>
-                        <div class="info-item"><span class="info-label">Season:</span> <span class="info-value">{{ meta.season }}</span></div>
-                        <div class="info-item"><span class="info-label">Dept:</span> <span class="info-value">{{ meta.dept }}</span></div>
-                        <div class="info-item"><span class="info-label">Item:</span> <span class="info-value">{{ meta.item }}</span></div>
+                        <div class="info-item"><span class="info-label">Season:</span> {{ meta.season }}</div>
+                        <div class="info-item"><span class="info-label">Dept:</span> {{ meta.dept }}</div>
+                        <div class="info-item"><span class="info-label">Item:</span> {{ meta.item }}</div>
                     </div>
                 </div>
-                
                 <div class="total-box">
-                    <div class="total-label">Grand Total</div>
+                    <div style="font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Grand Total Pieces</div>
                     <div class="total-value">{{ grand_total }}</div>
-                    <small>Pieces</small>
                 </div>
             </div>
 
             {% for item in tables %}
-                <div class="table-card">
-                    <div class="color-header">
-                        COLOR: {{ item.color }}
-                    </div>
+                <div class="card mb-4 border-0 shadow-sm overflow-hidden">
+                    <div class="color-header">COLOR: {{ item.color }}</div>
                     <div class="table-responsive">
                         {{ item.table | safe }}
                     </div>
                 </div>
             {% endfor %}
-            
-            <div class="footer-credit">
-                Report Created By <strong>Mehedi Hasan</strong>
-            </div>
+        {% else %}
+            <div class="alert alert-danger text-center">{{ message }}</div>
         {% endif %}
     </div>
-
     <script>
-        const dateObj = new Date();
-        const day = String(dateObj.getDate()).padStart(2, '0');
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const year = dateObj.getFullYear();
-        document.getElementById('date').innerText = `${day}-${month}-${year}`;
+        const d = new Date();
+        document.getElementById('date').innerText = `${d.getDate()}-${d.getMonth()+1}-${d.getFullYear()}`;
     </script>
 </body>
 </html>
 """
 
 # ==========================================
-#  LOGIC PART
+#  ADVANCED LOGIC PART (USING PDFPLUMBER)
 # ==========================================
-
-def is_potential_size(header):
-    h = header.strip().upper()
-    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
-        return False
-    if re.match(r'^\d+$', h): return True
-    if re.match(r'^\d+[AMYT]$', h): return True
-    if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
-    if re.match(r'^[A-Z]\d{2,}$', h): return False
-    return False
 
 def sort_sizes(size_list):
     STANDARD_ORDER = [
@@ -373,7 +165,7 @@ def sort_sizes(size_list):
         'TU', 'One Size'
     ]
     def sort_key(s):
-        s = s.strip()
+        s = str(s).strip()
         if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
         if s.isdigit(): return (1, int(s))
         match = re.match(r'^(\d+)([A-Z]+)$', s)
@@ -381,137 +173,97 @@ def sort_sizes(size_list):
         return (3, s)
     return sorted(size_list, key=sort_key)
 
-def extract_metadata(first_page_text):
-    meta = {
-        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
-        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-    }
+def extract_metadata_robust(text):
+    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
     
-    if "KIABI" in first_page_text.upper():
-        meta['buyer'] = "KIABI"
-    else:
-        buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
-        if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
-
-    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
-    if booking_block_match: 
-        raw_booking = booking_block_match.group(1).strip()
-        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
-        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
-        meta['booking'] = clean_booking
-
-    style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
+    # Buyer logic
+    if "KIABI" in text.upper(): meta['buyer'] = "KIABI"
+    
+    # Booking logic
+    booking_match = re.search(r"Booking NO\.?[:\s]*([\w-]+)", text, re.IGNORECASE)
+    if booking_match: meta['booking'] = booking_match.group(1).strip()
+    
+    # Style logic
+    style_match = re.search(r"Style (?:Ref|Des)\.?[:\s]*([\w-]+)", text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
-    else:
-        style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
-        if style_match: meta['style'] = style_match.group(1).strip()
-
-    season_match = re.search(r"Season\s*[:\n\"]*([\w\d-]+)", first_page_text, re.IGNORECASE)
+    
+    # Season logic
+    season_match = re.search(r"Season\s*[:\s]*([\w\d-]+)", text, re.IGNORECASE)
     if season_match: meta['season'] = season_match.group(1).strip()
-
-    dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
-    if dept_match: meta['dept'] = dept_match.group(1).strip()
-
-    item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
-    if item_match: 
-        item_text = item_match.group(1).strip()
-        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
-        meta['item'] = item_text
+    
+    # Item logic
+    item_match = re.search(r"(?:Garments?|Item)[\s\n:]*([A-Za-z\s]+)", text, re.IGNORECASE)
+    if item_match: meta['item'] = item_match.group(1).strip().split('\n')[0]
 
     return meta
 
-def extract_data_dynamic(file_path):
-    extracted_data = []
-    metadata = {
-        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
-        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-    }
-    order_no = "Unknown"
+def process_pdf_with_plumber(file_path):
+    extracted_rows = []
+    meta = {}
     
-    try:
-        reader = pypdf.PdfReader(file_path)
-        first_page_text = reader.pages[0].extract_text()
+    with pdfplumber.open(file_path) as pdf:
+        # ১ম পেজ থেকে মেটাডাটা নিই
+        first_page_text = pdf.pages[0].extract_text() or ""
+        meta = extract_metadata_robust(first_page_text)
         
-        if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
-            metadata = extract_metadata(first_page_text)
-            return [], metadata 
+        # যদি এটি শুধু বুকিং ফাইল হয় (টেবিল না থাকে), তবে শুধু মেটাডাটা ব্যাক করবে
+        if "Main Fabric Booking" in first_page_text:
+            return [], meta
 
-        order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
+        order_no = "N/A"
+        order_match = re.search(r"Order (?:no|PO)[\s\.]*(\d+)", first_page_text, re.IGNORECASE)
         if order_match: order_no = order_match.group(1)
-        else:
-            alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
-            if alt_match: order_no = alt_match.group(1)
-        
-        order_no = str(order_no).strip()
-        if order_no.endswith("00"): order_no = order_no[:-2]
 
-        for page in reader.pages:
-            text = page.extract_text()
-            lines = text.split('\n')
-            sizes = []
-            capturing_data = False
-            
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if not line: continue
-
-                if ("Colo" in line or "Size" in line) and "Total" in line:
-                    parts = line.split()
-                    try:
-                        total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
-                        raw_sizes = parts[:total_idx]
-                        temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
-                        
-                        valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
-                        if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
-                            sizes = temp_sizes
-                            capturing_data = True
-                        else:
-                            sizes = []
-                            capturing_data = False
-                    except: pass
-                    continue
+        for page in pdf.pages:
+            tables = page.extract_tables()
+            for table in tables:
+                if not table or len(table) < 2: continue
                 
-                if capturing_data:
-                    if line.startswith("Total Quantity") or line.startswith("Total Amount"):
-                        capturing_data = False
-                        continue
-                    
-                    lower_line = line.lower()
-                    if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
-                        continue
+                header_row = None
+                size_cols = {} # index: size_name
+                
+                # টেবিলের হেডার খোঁজা (যেখানে Colo এবং Total আছে)
+                for r_idx, row in enumerate(table):
+                    row_str = " ".join([str(x) for x in row if x])
+                    if ("Colo" in row_str or "Size" in row_str) and "Total" in row_str:
+                        header_row = row
+                        # সাইজ কলামগুলো শনাক্ত করা
+                        for c_idx, cell in enumerate(row):
+                            if not cell: continue
+                            c_clean = str(cell).strip()
+                            if c_clean in ["Colo", "Size", "Colo/Size", "Total", "Quantity", "Price", "Amount", "Currency"]:
+                                continue
+                            size_cols[c_idx] = c_clean
                         
-                    clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
-                    if not re.search(r'[a-zA-Z]', clean_line): continue
-                    if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: continue
-
-                    numbers_in_line = re.findall(r'\b\d+\b', line)
-                    quantities = [int(n) for n in numbers_in_line]
-                    color_name = clean_line
-                    final_qtys = []
-
-                    if len(quantities) >= len(sizes):
-                        if len(quantities) == len(sizes) + 1: final_qtys = quantities[:-1] 
-                        else: final_qtys = quantities[:len(sizes)]
-                        color_name = re.sub(r'\s\d+$', '', color_name).strip()
-                    elif len(quantities) < len(sizes): 
-                        vertical_qtys = []
-                        for next_line in lines[i+1:]:
-                            next_line = next_line.strip()
-                            if "Total" in next_line or re.search(r'[a-zA-Z]', next_line.replace("Spec", "").replace("price", "")): break
-                            if re.match(r'^\d+$', next_line): vertical_qtys.append(int(next_line))
-                        if len(vertical_qtys) >= len(sizes): final_qtys = vertical_qtys[:len(sizes)]
-                    
-                    if final_qtys and color_name:
-                         for idx, size in enumerate(sizes):
-                            extracted_data.append({
-                                'P.O NO': order_no,
-                                'Color': color_name,
-                                'Size': size,
-                                'Quantity': final_qtys[idx]
-                            })
-    except Exception as e: print(f"Error processing file: {e}")
-    return extracted_data, metadata
+                        # ডাটা রো প্রসেস করা (হেডারের নিচ থেকে)
+                        for data_row in table[r_idx + 1:]:
+                            if not data_row or not any(data_row): continue
+                            
+                            # প্রথম কলাম সাধারণত কালার হয়
+                            color_val = str(data_row[0]).strip() if data_row[0] else ""
+                            
+                            # যদি কালার না থাকে বা শুধু সংখ্যা হয়, তবে এটি কালার রো না হওয়ার সম্ভাবনা বেশি
+                            if not color_val or color_val.isdigit() or "Total" in color_val:
+                                continue
+                                
+                            for c_idx, size_name in size_cols.items():
+                                if c_idx < len(data_row):
+                                    qty_val = data_row[c_idx]
+                                    # খালি ঘর হলে ০ ধরবে
+                                    try:
+                                        qty = int(str(qty_val).strip().replace(',', '')) if qty_val and str(qty_val).strip().isdigit() else 0
+                                    except:
+                                        qty = 0
+                                        
+                                    if qty >= 0: # এমনকি ০ হলেও আমরা ডাটা রাখব সঠিক অ্যালাইনমেন্টের জন্য
+                                        extracted_rows.append({
+                                            'P.O NO': order_no,
+                                            'Color': color_val,
+                                            'Size': size_name,
+                                            'Quantity': qty
+                                        })
+                        break # এই টেবিল শেষ, পরের টেবিলে যাও
+    return extracted_rows, meta
 
 # ==========================================
 #  FLASK ROUTES
@@ -524,80 +276,66 @@ def index():
         os.makedirs(UPLOAD_FOLDER)
 
         uploaded_files = request.files.getlist('pdf_files')
-        all_data = []
-        final_meta = {
-            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
-            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-        }
+        combined_data = []
+        final_meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
         
         for file in uploaded_files:
-            if file.filename == '': continue
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(file_path)
+            if not file.filename: continue
+            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(path)
             
-            data, meta = extract_data_dynamic(file_path)
-            
-            if meta['buyer'] != 'N/A':
-                final_meta = meta
-            
-            if data:
-                all_data.extend(data)
+            data, meta = process_pdf_with_plumber(path)
+            if data: combined_data.extend(data)
+            for k, v in meta.items():
+                if v != 'N/A': final_meta[k] = v
         
-        if not all_data:
-            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
+        if not combined_data:
+            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found or files are unreadable.", meta=final_meta)
 
-        df = pd.DataFrame(all_data)
+        df = pd.DataFrame(combined_data)
+        # ডাটা ক্লিনিং
         df['Color'] = df['Color'].str.strip()
         df = df[df['Color'] != ""]
-        unique_colors = df['Color'].unique()
         
+        unique_colors = df['Color'].unique()
         final_tables = []
         grand_total_qty = 0
 
         for color in unique_colors:
             color_df = df[df['Color'] == color]
+            # পিভট টেবিল (সঠিক অ্যালাইনমেন্ট নিশ্চিত করে)
             pivot = color_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
             
-            existing_sizes = pivot.columns.tolist()
-            sorted_sizes = sort_sizes(existing_sizes)
-            pivot = pivot[sorted_sizes]
+            # সাইজ সর্টিং
+            sorted_cols = sort_sizes(pivot.columns.tolist())
+            pivot = pivot[sorted_cols]
             
+            # রো এবং কলাম টোটাল
             pivot['Total'] = pivot.sum(axis=1)
             grand_total_qty += pivot['Total'].sum()
 
-            actual_qty = pivot.sum()
-            actual_qty.name = 'Actual Qty'
+            actual_sum = pivot.sum()
+            actual_sum.name = 'Actual Qty'
             
-            qty_plus_3 = (actual_qty * 1.03).round().astype(int)
-            qty_plus_3.name = '3% Order Qty'
+            plus_3_sum = (actual_sum * 1.03).round().astype(int)
+            plus_3_sum.name = '3% Order Qty'
             
-            pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
+            pivot = pd.concat([pivot, actual_sum.to_frame().T, plus_3_sum.to_frame().T])
+            pivot = pivot.reset_index().rename(columns={'index': 'P.O NO'})
             
-            pivot = pivot.reset_index()
-            pivot = pivot.rename(columns={'index': 'P.O NO'})
-            pivot.columns.name = None
+            # HTML জেনারেট এবং ক্লাসিং
+            html = pivot.to_html(classes='table table-bordered table-hover mb-0', index=False, border=0)
+            html = html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
+            html = html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
+            html = html.replace('<tr>', '<tr class="data-row">')
+            html = html.replace('<tr class="data-row"><td>Actual Qty', '<tr class="summary-row"><td>Actual Qty')
+            html = html.replace('<tr class="data-row"><td>3% Order Qty', '<tr class="summary-row"><td>3% Order Qty')
+            
+            final_tables.append({'color': color, 'table': html})
 
-            pd.set_option('colheader_justify', 'center')
-            table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
-            
-            # Injections
-            table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
-            table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
-            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
-            
-            # Color Fix
-            table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
-            table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
-            table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
-
-            final_tables.append({'color': color, 'table': table_html})
-            
-        return render_template_string(RESULT_HTML, 
-                                      tables=final_tables, 
-                                      meta=final_meta, 
-                                      grand_total=f"{grand_total_qty:,}")
+        return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total_qty:,}")
 
     return render_template_string(INDEX_HTML)
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
