@@ -15,11 +15,344 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# HTML টেম্পলেটগুলো একই থাকবে (উপরের মতো)
-# ...
+# ==========================================
+# HTML & CSS TEMPLATES (BIG FONT & BOLD)
+# ==========================================
+
+INDEX_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Order Parser</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .main-card { border: none; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .card-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0 !important; padding: 25px; }
+        .btn-upload { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 12px 30px; font-weight: 600; transition: all 0.3s; }
+        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4); }
+        .upload-icon { font-size: 3rem; color: #764ba2; margin-bottom: 20px; }
+        .file-input-wrapper { border: 2px dashed #cbd5e0; border-radius: 10px; padding: 40px; background: #f8fafc; transition: all 0.3s; }
+        .file-input-wrapper:hover { border-color: #764ba2; background: #fff; }
+        .footer-credit { margin-top: 30px; font-size: 0.8rem; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card main-card">
+                    <div class="card-header text-center">
+                        <h2 class="mb-0">PDF Report Generator</h2>
+                        <p class="mb-0 opacity-75">Cotton Clothing BD Limited</p>
+                    </div>
+                    <div class="card-body p-5 text-center">
+                        <form action="/" method="post" enctype="multipart/form-data">
+                            <div class="file-input-wrapper mb-4">
+                                <div class="upload-icon">📂</div>
+                                <h5>Select PDF Files</h5>
+                                <p class="text-muted small">Select both Booking File & PO Files together</p>
+                                <input class="form-control form-control-lg mt-3" type="file" name="pdf_files" multiple accept=".pdf" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Report</button>
+                        </form>
+                        <div class="footer-credit">
+                            Report Created By <strong>Mehedi Hasan</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+RESULT_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PO Report - Cotton Clothing BD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .container { max-width: 1200px; }
+        
+        /* Header Styles (Unchanged Size) */
+        .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
+        .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
+        .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
+        
+        /* Info Boxes (Text Size Increased +3pt approx) */
+        .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
+        
+        .info-box { 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-left: 5px solid #2c3e50; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            flex: 2; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .total-box { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            width: 240px; /* Width increased for bigger text */
+            text-align: right; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
+        }
+        
+        /* Increased Font Size for Info Items */
+        .info-item { 
+            margin-bottom: 6px; 
+            font-size: 1.3rem; /* Increased (~13pt/14pt) */
+            font-weight: 700; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        
+        .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
+        .info-value { font-weight: 800; color: #000; }
+        
+        .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
+
+        /* Table Styles */
+        .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
+        
+        .color-header { 
+            background-color: #e9ecef; 
+            color: #2c3e50; 
+            padding: 10px 12px; 
+            font-size: 1.5rem; /* Increased Header Size */
+            font-weight: 900; 
+            border-bottom: 1px solid #dee2e6; 
+            text-transform: uppercase;
+        }
+
+        .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
+        
+        /* Table Header Cells (Bigger & Bolder) */
+        .table th { 
+            background-color: #2c3e50; 
+            color: white; 
+            font-weight: 900; 
+            font-size: 1.2rem; /* Increased (~13-14pt) */
+            text-align: center; 
+            border: 1px solid #34495e; 
+            padding: 8px 4px; 
+            vertical-align: middle; 
+        }
+        
+        /* Table Data Cells (Bigger & Bolder) */
+        .table td { 
+            text-align: center; 
+            vertical-align: middle; 
+            border: 1px solid #dee2e6; 
+            padding: 6px 3px; 
+            color: #000; 
+            font-weight: 800; /* Extra Bold */
+            font-size: 1.15rem; /* Increased (~13pt) */
+        }
+        
+        .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
+        
+        .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
+        .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
+        .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
+
+        /* SUMMARY ROW STYLES (Light Blue & Bold) */
+        .table-striped tbody tr.summary-row,
+        .table-striped tbody tr.summary-row td { 
+            background-color: #d1ecff !important; 
+            --bs-table-accent-bg: #d1ecff !important; 
+            color: #000 !important;
+            font-weight: 900 !important; /* Extra Bold */
+            border-top: 2px solid #aaa !important;
+            font-size: 1.2rem !important; /* Even Bigger for Summary */
+        }
+        
+        .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
+
+        .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
+        
+        /* Footer Smaller (-1pt) */
+        .footer-credit { 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 20px; 
+            font-size: 0.8rem; /* Reduced Size (~9pt) */
+            color: #2c3e50; 
+            padding-top: 10px; 
+            border-top: 1px solid #ddd; 
+        }
+
+        /* =========================================
+           PRINT SPECIFIC STYLES
+           ========================================= */
+        @media print {
+            @page { margin: 5mm; size: portrait; }
+            
+            body { 
+                background-color: white; 
+                padding: 0; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
+            .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            
+            .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+            /* Header Size Unchanged in Print */
+            .company-name { font-size: 1.8rem; } 
+            
+            .info-container { margin-bottom: 10px; }
+            .info-box { 
+                border: 1px solid #000 !important; 
+                border-left: 5px solid #000 !important; 
+                padding: 5px 10px; 
+                display: grid; 
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
+            
+            /* Info Items Print Size (+3pt) */
+            .info-item { font-size: 13pt !important; font-weight: 800 !important; }
+            
+            /* Table Print Size (+3pt) */
+            .table th, .table td { 
+                border: 1px solid #000 !important; 
+                padding: 2px !important; 
+                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
+                font-weight: 800 !important;
+            }
+            
+            /* Summary Row Color Force */
+            .table-striped tbody tr.summary-row td { 
+                background-color: #d1ecff !important; 
+                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
+                color: #000 !important;
+                font-weight: 900 !important;
+            }
+            
+            .color-header { 
+                background-color: #f1f1f1 !important; 
+                border: 1px solid #000 !important; 
+                font-size: 1.4rem !important; /* Bigger */
+                font-weight: 900 !important;
+                padding: 5px;
+                margin-top: 10px;
+                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
+            }
+            
+            .total-col-header {
+                background-color: #e8f6f3 !important;
+                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
+                color: #000 !important;
+            }
+            
+            .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
+            
+            /* Footer Smaller */
+            .footer-credit { 
+                display: block !important; 
+                color: black; 
+                border-top: 1px solid #000; 
+                margin-top: 10px; 
+                font-size: 8pt !important; /* Smaller */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="action-bar no-print">
+            <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Upload New</a>
+            <button onclick="window.print()" class="btn btn-print">🖨️ Print Report</button>
+        </div>
+
+        <div class="company-header">
+            <div class="company-name">Cotton Clothing BD Limited</div>
+            <div class="report-title">Purchase Order Summary</div>
+            <div class="date-section">Date: <span id="date"></span></div>
+        </div>
+
+        {% if message %}
+            <div class="alert alert-warning text-center no-print">{{ message }}</div>
+        {% endif %}
+
+        {% if tables %}
+            <div class="info-container">
+                <div class="info-box">
+                    <div>
+                        <div class="info-item"><span class="info-label">Buyer:</span> <span class="info-value">{{ meta.buyer }}</span></div>
+                        <div class="info-item"><span class="info-label">Booking:</span> <span class="info-value">{{ meta.booking }}</span></div>
+                        <div class="info-item"><span class="info-label">Style:</span> <span class="info-value">{{ meta.style }}</span></div>
+                    </div>
+                    <div>
+                        <div class="info-item"><span class="info-label">Season:</span> <span class="info-value">{{ meta.season }}</span></div>
+                        <div class="info-item"><span class="info-label">Dept:</span> <span class="info-value">{{ meta.dept }}</span></div>
+                        <div class="info-item"><span class="info-label">Item:</span> <span class="info-value">{{ meta.item }}</span></div>
+                    </div>
+                </div>
+                
+                <div class="total-box">
+                    <div class="total-label">Grand Total</div>
+                    <div class="total-value">{{ grand_total }}</div>
+                    <small>Pieces</small>
+                </div>
+            </div>
+
+            {% for item in tables %}
+                <div class="table-card">
+                    <div class="color-header">
+                        COLOR: {{ item.color }}
+                    </div>
+                    <div class="table-responsive">
+                        {{ item.table | safe }}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <div class="footer-credit">
+                Report Created By <strong>Mehedi Hasan</strong>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const dateObj = new Date();
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        document.getElementById('date').innerText = `${day}-${month}-${year}`;
+    </script>
+</body>
+</html>
+"""
 
 # ==========================================
-#  IMPROVED LOGIC WITH PDFPLUMBER
+# LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -327,13 +660,14 @@ def fallback_extraction(file_path, metadata):
     return extracted_data, metadata
 
 # ==========================================
-#  FLASK ROUTES (একই থাকবে)
+# FLASK ROUTES
 # ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
+        if os.path.exists(UPLOAD_FOLDER): 
+            shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
 
         uploaded_files = request.files.getlist('pdf_files')
@@ -344,7 +678,8 @@ def index():
         }
         
         for file in uploaded_files:
-            if file.filename == '': continue
+            if file.filename == '': 
+                continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             
