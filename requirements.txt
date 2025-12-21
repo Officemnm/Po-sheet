@@ -1,11 +1,5 @@
 Flask
-pypdf
-pandas
-numpy
-gunicorn
-pip
 pdfplumber
 pandas
-flask
 numpy
 
