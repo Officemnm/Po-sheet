@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (হুবহু আগের মত রাখা হয়েছে)
+#  HTML & CSS TEMPLATES
 # ==========================================
 
 INDEX_HTML = """
@@ -58,9 +58,7 @@ INDEX_HTML = """
                             </div>
                             <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Report</button>
                         </form>
-                        <div class="footer-credit">
-                            Report Created By <strong>Mehedi Hasan</strong>
-                        </div>
+                        <div class="footer-credit">Report Created By <strong>Mehedi Hasan</strong></div>
                     </div>
                 </div>
             </div>
@@ -88,7 +86,7 @@ RESULT_HTML = """
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 10px 15px; border-radius: 5px; flex: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .total-box { background: #2c3e50; color: white; padding: 10px 15px; border-radius: 5px; width: 240px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
-        .info-item { margin-bottom: 6px; font-size: 1.3rem; font-weight: 700; }
+        .info-item { margin-bottom: 6px; font-size: 1.3rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
         .info-value { font-weight: 800; color: #000; }
         .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
@@ -109,8 +107,9 @@ RESULT_HTML = """
             @page { margin: 5mm; size: portrait; }
             body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .no-print { display: none !important; }
-            .info-box { border: 1px solid #000 !important; }
-            .table th, .table td { border: 1px solid #000 !important; font-size: 13pt !important; }
+            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; }
+            .table th, .table td { border: 1px solid #000 !important; font-size: 13pt !important; font-weight: 800 !important; }
+            .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; }
         }
     </style>
 </head>
@@ -156,14 +155,16 @@ RESULT_HTML = """
     </div>
     <script>
         const dateObj = new Date();
-        document.getElementById('date').innerText = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        document.getElementById('date').innerText = `${d}-${m}-${dateObj.getFullYear()}`;
     </script>
 </body>
 </html>
 """
 
 # ==========================================
-#  LOGIC PART (উন্নত ও নির্ভুল করা হয়েছে)
+#  LOGIC PART (ERROR FREE)
 # ==========================================
 
 def is_potential_size(header):
@@ -183,89 +184,95 @@ def sort_sizes(size_list):
 
 def extract_metadata(first_page_text):
     meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
-    [span_4](start_span)if "KIABI" in first_page_text.upper(): meta['buyer'] = "KIABI"[span_4](end_span)
-    [span_5](start_span)booking_match = re.search(r"Computer Reference:\s*([\w/]+)", first_page_text, re.IGNORECASE)[span_5](end_span)
+    if "KIABI" in first_page_text.upper():
+        meta['buyer'] = "KIABI"
+    
+    booking_match = re.search(r"Computer Reference:\s*([\w/]+)", first_page_text, re.IGNORECASE)
     if booking_match: meta['booking'] = booking_match.group(1).strip()
-    [span_6](start_span)style_match = re.search(r"Article:\s*([\s\S]*?)(?:Certification|Season|$)", first_page_text, re.IGNORECASE)[span_6](end_span)
+    
+    style_match = re.search(r"Article:\s*([\s\S]*?)(?:Certification|Season|$)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip().split('\n')[0][:20]
-    [span_7](start_span)season_match = re.search(r"Season\s*[:\n\"]*([\w\d\s]+)", first_page_text, re.IGNORECASE)[span_7](end_span)
+    
+    season_match = re.search(r"Season\s*[:\n\"]*([\w\d\s]+)", first_page_text, re.IGNORECASE)
     if season_match: meta['season'] = season_match.group(1).strip()
-    [span_8](start_span)dept_match = re.search(r"Process:\s*([A-Za-z\s]+)", first_page_text, re.IGNORECASE)[span_8](end_span)
+    
+    dept_match = re.search(r"Process:\s*([A-Za-z\s]+)", first_page_text, re.IGNORECASE)
     if dept_match: meta['dept'] = dept_match.group(1).strip()
-    [span_9](start_span)item_match = re.search(r"Article:[\s\n]*([A-Z0-9\s-]+)", first_page_text, re.IGNORECASE)[span_9](end_span)
+    
+    item_match = re.search(r"Article:[\s\n]*([A-Z0-9\s-]+)", first_page_text, re.IGNORECASE)
     if item_match: meta['item'] = "T-SHIRT" if "TS" in item_match.group(1) else "GARMENTS"
+    
     return meta
 
 def extract_data_dynamic(file_path):
-    extracted_data, metadata, order_no = [], {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}, "Unknown"
+    extracted_data, order_no = [], "Unknown"
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
-        if "Main Fabric Booking" in first_page_text: return [], extract_metadata(first_page_text)
-        [span_10](start_span)order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)[span_10](end_span)
-        if order_match: order_no = str(order_match.group(1)).strip()[:-2] if str(order_match.group(1)).endswith("00") else str(order_match.group(1))
+        meta = extract_metadata(first_page_text)
+        
+        if "Main Fabric Booking" in first_page_text: return [], meta
+        
+        order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
+        if order_match: 
+            order_no = str(order_match.group(1)).strip()
+            if order_no.endswith("00"): order_no = order_no[:-2]
 
         for page in reader.pages:
             lines = page.extract_text().split('\n')
             sizes, capturing_data = [], False
             for i, line in enumerate(lines):
-                [span_11](start_span)if ("Colo" in line or "Size" in line) and "Total" in line:[span_11](end_span)
-                    parts = line.split()
-                    sizes = [s for s in parts if is_potential_size(s)]
+                if ("Colo" in line or "Size" in line) and "Total" in line:
+                    sizes = [s for s in line.split() if is_potential_size(s)]
                     if sizes: capturing_data = True
                     continue
+                
                 if capturing_data:
-                    [span_12](start_span)if "Total Quantity" in line or "Total Amount" in line:[span_12](end_span)
+                    if "Total Quantity" in line or "Total Amount" in line:
                         capturing_data = False; continue
-                    [span_13](start_span)if not re.search(r'[a-zA-Z]', line) or "Spec. price" not in line: continue[span_13](end_span)
+                    if not re.search(r'[a-zA-Z]', line) or "Spec. price" not in line: continue
                     
-                    [span_14](start_span)color_name = line.split("Spec. price")[0].strip()[span_14](end_span)
-                    # লাইনের সব সংখ্যা খুঁজে বের করা (QTY এবং TOTAL সহ)
-                    [span_15](start_span)nums = [int(n) for n in re.findall(r'\b\d+\b', line.split("Spec. price")[1])][span_15](end_span)
+                    color_name = line.split("Spec. price")[0].strip()
+                    nums = [int(n) for n in re.findall(r'\b\d+\b', line.split("Spec. price")[1])]
                     
                     if not nums: continue
+                    row_total = nums[-1]
+                    qty_data = nums[:-1]
                     
-                    # শেষের সংখ্যাটি সাধারণত 'Row Total' হয়
-                    [span_16](start_span)row_total = nums[-1][span_16](end_span)
-                    qty_data = nums[:-1] # শেষেরটি বাদে বাকিগুলো আসল QTY
-                    
-                    # --- GAP DETECTION LOGIC (ফাঁকা ঘর শনাক্তকরণ) ---
                     final_mapped_qtys = [0] * len(sizes)
                     if len(qty_data) == len(sizes):
                         final_mapped_qtys = qty_data
                     elif len(qty_data) < len(sizes):
-                        # যদি সংখ্যা কম থাকে, তবে অংক করে বের করা হবে কোথায় ০ বসবে
-                        # এটি সাধারণত চেক করে যে কোন ইনডেক্সে ০ বসালে যোগফল Row Total এর সমান হয়
-                        found_gap = False
                         for gap_idx in range(len(sizes)):
                             temp_list = qty_data[:gap_idx] + [0] + qty_data[gap_idx:]
                             if sum(temp_list[:len(sizes)]) == row_total:
                                 final_mapped_qtys = temp_list[:len(sizes)]
-                                found_gap = True
                                 break
-                        if not found_gap: final_mapped_qtys = qty_data + [0]*(len(sizes)-len(qty_data))
                     else:
                         final_mapped_qtys = qty_data[:len(sizes)]
                     
                     for idx, s in enumerate(sizes):
                         extracted_data.append({'P.O NO': order_no, 'Color': color_name, 'Size': s, 'Quantity': final_mapped_qtys[idx]})
     except Exception as e: print(f"Error: {e}")
-    return extracted_data, extract_metadata(first_page_text)
+    return extracted_data, meta
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
-        files, all_data, final_meta = request.files.getlist('pdf_files'), [], {}
+        files = request.files.getlist('pdf_files')
+        all_data, final_meta = [], {}
         for f in files:
             if f.filename:
                 path = os.path.join(app.config['UPLOAD_FOLDER'], f.filename)
                 f.save(path)
                 d, m = extract_data_dynamic(path)
-                if m['buyer'] != 'N/A': final_meta = m
+                if m.get('buyer') != 'N/A': final_meta = m
                 all_data.extend(d)
+        
         if not all_data: return render_template_string(RESULT_HTML, tables=None)
+        
         df = pd.DataFrame(all_data)
         final_tables, grand_total = [], 0
         for color in df['Color'].unique():
@@ -276,11 +283,14 @@ def index():
             act, q3 = pdf.sum(), (pdf.sum()*1.03).round().astype(int)
             act.name, q3.name = 'Actual Qty', '3% Order Qty'
             pdf = pd.concat([pdf, act.to_frame().T, q3.to_frame().T]).reset_index().rename(columns={'index': 'P.O NO'})
+            
             html = pdf.to_html(classes='table table-bordered table-striped', index=False, border=0)
-            html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', html).replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
+            html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', html)
+            html = html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             html = html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>').replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', html)
             final_tables.append({'color': color, 'table': html})
+            
         return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total:,}")
     return render_template_string(INDEX_HTML)
 
