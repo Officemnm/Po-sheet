@@ -1,11 +1,11 @@
 from flask import Flask, request, render_template_string
+import pdfplumber
 import pypdf
 import pandas as pd
 import os
 import re
 import shutil
 import numpy as np
-from itertools import combinations
 
 app = Flask(__name__)
 
@@ -83,13 +83,11 @@ RESULT_HTML = """
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         
-        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes (Text Size Increased +3pt approx) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         
         .info-box { 
@@ -110,7 +108,7 @@ RESULT_HTML = """
             color: white; 
             padding: 10px 15px; 
             border-radius: 5px; 
-            width: 240px; /* Width increased for bigger text */
+            width: 240px;
             text-align: right; 
             display: flex; 
             flex-direction: column; 
@@ -118,10 +116,9 @@ RESULT_HTML = """
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
-        /* Increased Font Size for Info Items */
         .info-item { 
             margin-bottom: 6px; 
-            font-size: 1.3rem; /* Increased (~13pt/14pt) */
+            font-size: 1.3rem;
             font-weight: 700; 
             white-space: nowrap; 
             overflow: hidden; 
@@ -134,14 +131,13 @@ RESULT_HTML = """
         .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
 
-        /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
         
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
             padding: 10px 12px; 
-            font-size: 1.5rem; /* Increased Header Size */
+            font-size: 1.5rem;
             font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
@@ -149,27 +145,25 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
-        /* Table Header Cells (Bigger & Bolder) */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
             font-weight: 900; 
-            font-size: 1.2rem; /* Increased (~13-14pt) */
+            font-size: 1.2rem;
             text-align: center; 
             border: 1px solid #34495e; 
             padding: 8px 4px; 
             vertical-align: middle; 
         }
         
-        /* Table Data Cells (Bigger & Bolder) */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
             padding: 6px 3px; 
             color: #000; 
-            font-weight: 800; /* Extra Bold */
-            font-size: 1.15rem; /* Increased (~13pt) */
+            font-weight: 800;
+            font-size: 1.15rem;
         }
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
@@ -178,15 +172,14 @@ RESULT_HTML = """
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* SUMMARY ROW STYLES (Light Blue & Bold) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
             background-color: #d1ecff !important; 
             --bs-table-accent-bg: #d1ecff !important; 
             color: #000 !important;
-            font-weight: 900 !important; /* Extra Bold */
+            font-weight: 900 !important;
             border-top: 2px solid #aaa !important;
-            font-size: 1.2rem !important; /* Even Bigger for Summary */
+            font-size: 1.2rem !important;
         }
         
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
@@ -194,20 +187,16 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        /* Footer Smaller (-1pt) */
         .footer-credit { 
             text-align: center; 
             margin-top: 30px; 
             margin-bottom: 20px; 
-            font-size: 0.8rem; /* Reduced Size (~9pt) */
+            font-size: 0.8rem;
             color: #2c3e50; 
             padding-top: 10px; 
             border-top: 1px solid #ddd; 
         }
 
-        /* =========================================
-           PRINT SPECIFIC STYLES
-           ========================================= */
         @media print {
             @page { margin: 5mm; size: portrait; }
             
@@ -223,7 +212,6 @@ RESULT_HTML = """
             .no-print { display: none !important; }
             
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
-            /* Header Size Unchanged in Print */
             .company-name { font-size: 1.8rem; } 
             
             .info-container { margin-bottom: 10px; }
@@ -237,18 +225,15 @@ RESULT_HTML = """
             }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             
-            /* Info Items Print Size (+3pt) */
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             
-            /* Table Print Size (+3pt) */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
                 padding: 2px !important; 
-                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
+                font-size: 13pt !important;
                 font-weight: 800 !important;
             }
             
-            /* Summary Row Color Force */
             .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
                 box-shadow: inset 0 0 0 9999px #d1ecff !important; 
@@ -259,7 +244,7 @@ RESULT_HTML = """
             .color-header { 
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
-                font-size: 1.4rem !important; /* Bigger */
+                font-size: 1.4rem !important;
                 font-weight: 900 !important;
                 padding: 5px;
                 margin-top: 10px;
@@ -274,13 +259,12 @@ RESULT_HTML = """
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             
-            /* Footer Smaller */
             .footer-credit { 
                 display: block !important; 
                 color: black; 
                 border-top: 1px solid #000; 
                 margin-top: 10px; 
-                font-size: 8pt !important; /* Smaller */
+                font-size: 8pt !important;
             }
         }
     </style>
@@ -422,54 +406,105 @@ def extract_metadata(first_page_text):
     return meta
 
 
-def find_correct_quantity_positions(quantities, num_sizes, expected_total):
+def extract_with_pdfplumber(file_path, order_no):
     """
-    Total ব্যবহার করে সঠিক quantity positions বের করে।
-    
-    যেমন: quantities = [425, 637, 1062], num_sizes = 4, expected_total = 1062
-    বুঝতে হবে যে 1062 হলো Total, এবং 425 + 637 = 1062
-    তাই 2টা quantity আছে 4টা size এর মধ্যে, বাকি 2টায় 0
+    pdfplumber দিয়ে table extract করে - ফাঁকা cell সঠিকভাবে handle করে
     """
+    extracted_data = []
     
-    # যদি শেষের number টা Total হয়
-    if quantities and quantities[-1] == expected_total:
-        actual_quantities = quantities[:-1]
-    else:
-        actual_quantities = quantities
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                tables = page.extract_tables()
+                
+                for table in tables:
+                    if not table or len(table) < 2:
+                        continue
+                    
+                    # Header row খুঁজি
+                    header_row = None
+                    header_idx = -1
+                    
+                    for idx, row in enumerate(table):
+                        row_text = ' '.join([str(cell) if cell else '' for cell in row])
+                        if ('Colo' in row_text or 'Size' in row_text) and 'Total' in row_text:
+                            header_row = row
+                            header_idx = idx
+                            break
+                    
+                    if header_row is None:
+                        continue
+                    
+                    # Sizes extract করি
+                    sizes = []
+                    size_indices = []
+                    
+                    for col_idx, cell in enumerate(header_row):
+                        if cell:
+                            cell_text = str(cell).strip()
+                            if is_potential_size(cell_text):
+                                sizes.append(cell_text)
+                                size_indices.append(col_idx)
+                    
+                    if not sizes:
+                        continue
+                    
+                    # Data rows process করি
+                    for row in table[header_idx + 1:]:
+                        if not row:
+                            continue
+                        
+                        row_text = ' '.join([str(cell) if cell else '' for cell in row])
+                        
+                        # Skip unwanted rows
+                        if 'Total Quantity' in row_text or 'Total Amount' in row_text:
+                            continue
+                        lower_row = row_text.lower()
+                        if 'quantity' in lower_row or 'currency' in lower_row or 'price' in lower_row or 'amount' in lower_row:
+                            continue
+                        
+                        # Color name (first cell with text)
+                        color_name = None
+                        for cell in row:
+                            if cell:
+                                cell_text = str(cell).strip()
+                                if re.search(r'[a-zA-Z]', cell_text) and not re.match(r'^[A-Z]\d+$', cell_text):
+                                    if cell_text not in ['Assortment', 'Spec', 'price']:
+                                        color_name = cell_text.replace('Spec.', '').replace('price', '').strip()
+                                        break
+                        
+                        if not color_name:
+                            continue
+                        
+                        # প্রতিটি size column থেকে quantity নিই
+                        # ফাঁকা cell এ None/empty থাকবে, সেখানে 0 বসাবো
+                        for size, col_idx in zip(sizes, size_indices):
+                            if col_idx < len(row):
+                                cell_value = row[col_idx]
+                                
+                                # ফাঁকা cell check
+                                if cell_value is None or str(cell_value).strip() == '':
+                                    qty = 0
+                                else:
+                                    # Number extract করি
+                                    try:
+                                        qty = int(re.sub(r'[^\d]', '', str(cell_value)))
+                                    except:
+                                        qty = 0
+                            else:
+                                qty = 0
+                            
+                            extracted_data.append({
+                                'P.O NO': order_no,
+                                'Color': color_name,
+                                'Size': size,
+                                'Quantity': qty
+                            })
+                    
+    except Exception as e:
+        print(f"pdfplumber error: {e}")
     
-    # যদি actual quantities এর যোগফল expected_total এর সমান হয়
-    if sum(actual_quantities) == expected_total:
-        # quantities সংখ্যা size সংখ্যার সমান হলে সরাসরি return
-        if len(actual_quantities) == num_sizes:
-            return actual_quantities
-        
-        # কম হলে বাকিতে 0 বসাতে হবে
-        # কিন্তু কোন position এ 0 বসবে সেটা জানা নেই
-        # তাই আমরা প্রথম positions এ quantities বসাই
-        if len(actual_quantities) < num_sizes:
-            result = [0] * num_sizes
-            for i, qty in enumerate(actual_quantities):
-                result[i] = qty
-            return result
-    
-    # যদি Total match না করে, সব combinations try করি
-    for num_zeros in range(num_sizes - len(actual_quantities) + 1):
-        for zero_positions in combinations(range(num_sizes), num_zeros):
-            test_result = [0] * num_sizes
-            qty_idx = 0
-            for pos in range(num_sizes):
-                if pos not in zero_positions and qty_idx < len(actual_quantities):
-                    test_result[pos] = actual_quantities[qty_idx]
-                    qty_idx += 1
-            
-            if sum(test_result) == expected_total:
-                return test_result
-    
-    # কোনো match না হলে, simple approach
-    result = [0] * num_sizes
-    for i, qty in enumerate(actual_quantities[:num_sizes]):
-        result[i] = qty
-    return result
+    return extracted_data
 
 
 def extract_data_dynamic(file_path):
@@ -481,22 +516,50 @@ def extract_data_dynamic(file_path):
     order_no = "Unknown"
     
     try:
+        # pypdf দিয়ে text extract করি metadata ও order no এর জন্য
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
+        # Booking file check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
 
+        # Order number extract
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
-        if order_match: order_no = order_match.group(1)
+        if order_match: 
+            order_no = order_match.group(1)
         else:
             alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
-            if alt_match: order_no = alt_match.group(1)
+            if alt_match: 
+                order_no = alt_match.group(1)
         
         order_no = str(order_no).strip()
-        if order_no.endswith("00"): order_no = order_no[:-2]
+        if order_no.endswith("00"): 
+            order_no = order_no[:-2]
 
+        # ===== pdfplumber দিয়ে table extract (ফাঁকা cell সঠিকভাবে handle করবে) =====
+        extracted_data = extract_with_pdfplumber(file_path, order_no)
+        
+        # যদি pdfplumber কাজ না করে, fallback to pypdf
+        if not extracted_data:
+            extracted_data = extract_with_pypdf_fallback(file_path, order_no)
+            
+    except Exception as e: 
+        print(f"Error processing file: {e}")
+    
+    return extracted_data, metadata
+
+
+def extract_with_pypdf_fallback(file_path, order_no):
+    """
+    Fallback method - আপনার আগের কোড
+    """
+    extracted_data = []
+    
+    try:
+        reader = pypdf.PdfReader(file_path)
+        
         for page in reader.pages:
             text = page.extract_text()
             lines = text.split('\n')
@@ -537,74 +600,42 @@ def extract_data_dynamic(file_path):
                     if not re.search(r'[a-zA-Z]', clean_line): continue
                     if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: continue
 
-                    # Line থেকে সব numbers extract করি
                     numbers_in_line = re.findall(r'\b\d+\b', line)
                     quantities = [int(n) for n in numbers_in_line]
+                    color_name = clean_line
+                    final_qtys = []
+
+                    if len(quantities) >= len(sizes):
+                        if len(quantities) == len(sizes) + 1: 
+                            final_qtys = quantities[:-1] 
+                        else: 
+                            final_qtys = quantities[:len(sizes)]
+                        color_name = re.sub(r'\s\d+$', '', color_name).strip()
+                    elif len(quantities) < len(sizes): 
+                        vertical_qtys = []
+                        for next_line in lines[i+1:]:
+                            next_line = next_line.strip()
+                            if "Total" in next_line or re.search(r'[a-zA-Z]', next_line.replace("Spec", "").replace("price", "")): 
+                                break
+                            if re.match(r'^\d+$', next_line): 
+                                vertical_qtys.append(int(next_line))
+                        if len(vertical_qtys) >= len(sizes): 
+                            final_qtys = vertical_qtys[:len(sizes)]
                     
-                    # Color name extract করি
-                    color_name = re.sub(r'\s*\d+.*$', '', clean_line).strip()
-                    if not color_name: continue
-                    
-                    # ======== মূল সংশোধন: Total-based validation ========
-                    
-                    if len(quantities) == 0:
-                        continue
-                    
-                    # শেষের number টা Total হতে পারে
-                    expected_total = quantities[-1] if quantities else 0
-                    
-                    # Check: বাকি quantities এর যোগফল == শেষের number?
-                    if len(quantities) > 1:
-                        sum_without_last = sum(quantities[:-1])
-                        
-                        if sum_without_last == expected_total:
-                            # হ্যাঁ, শেষেরটা Total
-                            actual_quantities = quantities[:-1]
-                        else:
-                            # না, সব quantity (Total আলাদা column এ নেই অথবা সব size এ value আছে)
-                            actual_quantities = quantities
-                            # এক্ষেত্রে expected_total হবে সব এর যোগফল
-                            expected_total = sum(quantities)
-                    else:
-                        actual_quantities = quantities
-                        expected_total = sum(quantities)
-                    
-                    # এখন actual_quantities কে sizes এ map করি
-                    num_sizes = len(sizes)
-                    
-                    if len(actual_quantities) == num_sizes:
-                        # Perfect match - সব size এ value আছে
-                        final_qtys = actual_quantities
-                    
-                    elif len(actual_quantities) < num_sizes:
-                        # কিছু size এ value নেই (ফাঁকা ঘর)
-                        # Total দিয়ে verify করে সঠিক position বের করি
-                        final_qtys = find_correct_quantity_positions(
-                            actual_quantities, 
-                            num_sizes, 
-                            expected_total
-                        )
-                    
-                    elif len(actual_quantities) > num_sizes:
-                        # বেশি numbers - প্রথম num_sizes টা নিই
-                        final_qtys = actual_quantities[:num_sizes]
-                    
-                    # ======== সংশোধন শেষ ========
-                    
-                    # Data add করি
                     if final_qtys and color_name:
                         for idx, size in enumerate(sizes):
                             extracted_data.append({
                                 'P.O NO': order_no,
                                 'Color': color_name,
                                 'Size': size,
-                                'Quantity': final_qtys[idx] if idx < len(final_qtys) else 0
+                                'Quantity': final_qtys[idx]
                             })
                             
-    except Exception as e: 
-        print(f"Error processing file: {e}")
+    except Exception as e:
+        print(f"pypdf fallback error: {e}")
     
-    return extracted_data, metadata
+    return extracted_data
+
 
 # ==========================================
 #  FLASK ROUTES
@@ -613,7 +644,8 @@ def extract_data_dynamic(file_path):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
+        if os.path.exists(UPLOAD_FOLDER): 
+            shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
 
         uploaded_files = request.files.getlist('pdf_files')
@@ -624,7 +656,8 @@ def index():
         }
         
         for file in uploaded_files:
-            if file.filename == '': continue
+            if file.filename == '': 
+                continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             
@@ -678,7 +711,7 @@ def index():
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
-            # Color Fix
+            # Summary row fix
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
