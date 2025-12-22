@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FINAL)
+#  HTML & CSS TEMPLATES (আপনার পছন্দের ডিজাইন)
 # ==========================================
 
 INDEX_HTML = """
@@ -118,7 +118,6 @@ RESULT_HTML = """
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* SUMMARY ROW FIX */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
             background-color: #d1ecff !important; --bs-table-accent-bg: #d1ecff !important; 
@@ -142,9 +141,12 @@ RESULT_HTML = """
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 13pt !important; font-weight: 800 !important; }
+            
+            /* Color Fix for Print */
             .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; color: #000 !important; font-weight: 900 !important; }
             .color-header { background-color: #f1f1f1 !important; border: 1px solid #000 !important; font-size: 1.4rem !important; font-weight: 900 !important; padding: 5px; margin-top: 10px; box-shadow: inset 0 0 0 9999px #f1f1f1 !important; }
             .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
+            
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; font-size: 8pt !important; }
         }
@@ -218,8 +220,18 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (TARGETED TABLE PARSING)
+#  LOGIC PART (EMPTY CELL FIX with TABLE SETTINGS)
 # ==========================================
+
+def is_potential_size(header):
+    h = header.strip().upper()
+    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
+        return False
+    if re.match(r'^\d+$', h): return True
+    if re.match(r'^\d+[AMYT]$', h): return True
+    if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
+    if re.match(r'^[A-Z]\d{2,}$', h): return False
+    return False
 
 def sort_sizes(size_list):
     STANDARD_ORDER = [
@@ -230,12 +242,9 @@ def sort_sizes(size_list):
     ]
     def sort_key(s):
         s = s.strip()
-        s_clean = s.replace(' ', '')
-        if s_clean in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s_clean))
-        for idx, std in enumerate(STANDARD_ORDER):
-            if std == s_clean: return (0, idx)
+        if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
         if s.isdigit(): return (1, int(s))
-        match = re.match(r'^(\d+)\s*([A-Z]+)$', s)
+        match = re.match(r'^(\d+)([A-Z]+)$', s)
         if match: return (2, int(match.group(1)), match.group(2))
         return (3, s)
     return sorted(size_list, key=sort_key)
@@ -247,12 +256,12 @@ def extract_metadata(first_page_text):
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
-    if booking_match: 
-        raw = booking_match.group(1).strip()
-        clean = raw.replace('\n', '').replace('\r', '').replace(' ', '')
-        if "System" in clean: clean = clean.split("System")[0]
-        meta['booking'] = clean
+    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if booking_block_match: 
+        raw_booking = booking_block_match.group(1).strip()
+        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
+        meta['booking'] = clean_booking
 
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
@@ -268,9 +277,9 @@ def extract_metadata(first_page_text):
 
     item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
     if item_match: 
-        item = item_match.group(1).strip()
-        if "Style" in item: item = item.split("Style")[0].strip()
-        meta['item'] = item
+        item_text = item_match.group(1).strip()
+        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
+        meta['item'] = item_text
 
     return meta
 
@@ -284,7 +293,6 @@ def extract_data_dynamic(file_path):
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -300,38 +308,37 @@ def extract_data_dynamic(file_path):
         
     except Exception as e: print(f"Meta error: {e}")
 
-    # 2. Table Extraction using pdfplumber (TARGETED)
+    # 2. TABLE EXTRACTION WITH EMPTY CELL FIX (Strategy: Text)
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
-                tables = page.extract_tables()
+                # IMPORTANT: 'vertical_strategy': 'text' allows detection of columns based on whitespace
+                # This fixes the issue where empty cells were ignored/shifted in pypdf
+                tables = page.extract_tables(table_settings={
+                    "vertical_strategy": "text", 
+                    "horizontal_strategy": "text",
+                    "snap_tolerance": 5
+                })
                 
                 for table in tables:
                     header_row_idx = -1
                     size_map = {} 
                     
-                    # === TARGETED HEADER DETECTION ===
-                    # Look for the specific table structure from the user's PDF:
-                    # It starts with "Colo/Size" (or similar) and ends with "Total"
+                    # 1. HEADER DETECTION
                     for i, row in enumerate(table):
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
+                        potential_sizes = [c for c in clean_row if is_potential_size(c)]
                         
-                        # Convert whole row to a single string for keyword search
-                        row_str = " ".join(clean_row).lower()
-                        
-                        # Logic: Look for "total" AND ("colo" or "size") in the header row
-                        if "total" in row_str and ("colo" in row_str or "size" in row_str):
+                        if len(potential_sizes) >= 3:
                             header_row_idx = i
-                            # Map columns
                             for idx, cell in enumerate(clean_row):
-                                # Map everything that isn't a known keyword as a size
-                                if cell and cell.lower() not in ["colo/size", "total", "color", "size"]:
+                                if is_potential_size(cell):
                                     size_map[idx] = cell
                             break
                     
                     if header_row_idx == -1: continue
 
-                    # 2. DATA ROWS PROCESSING
+                    # 2. DATA ROWS
                     for row in table[header_row_idx+1:]:
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
                         
@@ -339,17 +346,12 @@ def extract_data_dynamic(file_path):
                         
                         first_cell = clean_row[0].replace('\n', ' ').strip()
                         
-                        # === GARBAGE FILTERS ===
                         if not first_cell: continue
-                        if first_cell.startswith("XX"): continue 
-                        if "CM" in first_cell: continue 
-                        if re.match(r'^\d+$', first_cell): continue # If it's just a number
+                        if first_cell.startswith("XX") or "CM" in first_cell: continue 
+                        if re.match(r'^\d+$', first_cell): continue
+                        if "Total" in first_cell or "Grand Total" in first_cell: continue
                         
-                        # Stop if we hit the footer totals
-                        if first_cell.lower().startswith("total"): continue
-                        
-                        # Clean Color Name (Remove "Spec. price" etc.)
-                        color_name = re.sub(r'(Spec\.?|price|Qty).*', '', first_cell, flags=re.IGNORECASE).strip()
+                        color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
                         if not color_name: continue
                         
                         has_valid_qty = False
@@ -358,15 +360,14 @@ def extract_data_dynamic(file_path):
                         for col_idx, size in size_map.items():
                             if col_idx < len(clean_row):
                                 qty_str = clean_row[col_idx]
-                                # Clean everything except digits
                                 qty_str = re.sub(r'[^\d]', '', qty_str)
                                 
                                 qty = 0
                                 if qty_str:
                                     qty = int(qty_str)
-                                    if qty > 100000: qty = 0 # Sanity Check
+                                    if qty > 100000: qty = 0 
                                 
-                                # CRITICAL: We record the 0s now because pdfplumber handles empty cells correctly
+                                # HERE IS THE FIX: We record 0 if cell is empty
                                 row_data_temp.append({
                                     'P.O NO': order_no,
                                     'Color': color_name,
