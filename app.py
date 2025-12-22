@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import numpy as np
+from itertools import combinations
 
 app = Flask(__name__)
 
@@ -420,151 +421,56 @@ def extract_metadata(first_page_text):
 
     return meta
 
-def parse_table_with_positions(page):
-    """
-    টেবিল থেকে position-based extraction করে যাতে ফাঁকা সেল সঠিকভাবে handle হয়
-    """
-    extracted_data = []
-    
-    try:
-        # টেবিল extract করার চেষ্টা
-        tables = []
-        
-        # প্রথমে text থেকে parse করি
-        text = page.extract_text()
-        if not text:
-            return []
-            
-        lines = text.split('\n')
-        sizes = []
-        size_line_found = False
-        capturing_data = False
-        
-        for i, line in enumerate(lines):
-            line = line.strip()
-            if not line:
-                continue
 
-            # Size header line খুঁজি
-            if ("Colo" in line or "Size" in line) and "Total" in line:
-                parts = line.split()
-                try:
-                    total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
-                    raw_sizes = parts[:total_idx]
-                    temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
-                    
-                    valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
-                    if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
-                        sizes = temp_sizes
-                        size_line_found = True
-                        capturing_data = True
-                    else:
-                        sizes = []
-                        capturing_data = False
-                except:
-                    pass
-                continue
+def find_correct_quantity_positions(quantities, num_sizes, expected_total):
+    """
+    Total ব্যবহার করে সঠিক quantity positions বের করে।
+    
+    যেমন: quantities = [425, 637, 1062], num_sizes = 4, expected_total = 1062
+    বুঝতে হবে যে 1062 হলো Total, এবং 425 + 637 = 1062
+    তাই 2টা quantity আছে 4টা size এর মধ্যে, বাকি 2টায় 0
+    """
+    
+    # যদি শেষের number টা Total হয়
+    if quantities and quantities[-1] == expected_total:
+        actual_quantities = quantities[:-1]
+    else:
+        actual_quantities = quantities
+    
+    # যদি actual quantities এর যোগফল expected_total এর সমান হয়
+    if sum(actual_quantities) == expected_total:
+        # quantities সংখ্যা size সংখ্যার সমান হলে সরাসরি return
+        if len(actual_quantities) == num_sizes:
+            return actual_quantities
+        
+        # কম হলে বাকিতে 0 বসাতে হবে
+        # কিন্তু কোন position এ 0 বসবে সেটা জানা নেই
+        # তাই আমরা প্রথম positions এ quantities বসাই
+        if len(actual_quantities) < num_sizes:
+            result = [0] * num_sizes
+            for i, qty in enumerate(actual_quantities):
+                result[i] = qty
+            return result
+    
+    # যদি Total match না করে, সব combinations try করি
+    for num_zeros in range(num_sizes - len(actual_quantities) + 1):
+        for zero_positions in combinations(range(num_sizes), num_zeros):
+            test_result = [0] * num_sizes
+            qty_idx = 0
+            for pos in range(num_sizes):
+                if pos not in zero_positions and qty_idx < len(actual_quantities):
+                    test_result[pos] = actual_quantities[qty_idx]
+                    qty_idx += 1
             
-            if capturing_data and sizes:
-                if line.startswith("Total Quantity") or line.startswith("Total Amount"):
-                    capturing_data = False
-                    continue
-                
-                lower_line = line.lower()
-                if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
-                    continue
-                    
-                clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
-                if not re.search(r'[a-zA-Z]', clean_line):
-                    continue
-                if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line:
-                    continue
+            if sum(test_result) == expected_total:
+                return test_result
+    
+    # কোনো match না হলে, simple approach
+    result = [0] * num_sizes
+    for i, qty in enumerate(actual_quantities[:num_sizes]):
+        result[i] = qty
+    return result
 
-                # Color name এবং quantities আলাদা করি
-                # প্রথমে color name বের করি (শুরুর text অংশ)
-                color_match = re.match(r'^([A-Za-z][A-Za-z\s\-\/\.]+?)(?:\s+\d|\s*$)', clean_line)
-                if color_match:
-                    color_name = color_match.group(1).strip()
-                else:
-                    # যদি match না হয়, পুরো text থেকে শেষের numbers বাদ দিই
-                    color_name = re.sub(r'[\s\d]+$', '', clean_line).strip()
-                
-                if not color_name:
-                    continue
-                
-                # Line থেকে সব numbers বের করি position সহ
-                number_pattern = re.finditer(r'\b(\d+)\b', line)
-                numbers_with_pos = [(m.group(1), m.start()) for m in number_pattern]
-                
-                if not numbers_with_pos:
-                    continue
-                
-                quantities = [int(n[0]) for n in numbers_with_pos]
-                
-                # যদি quantities এর সংখ্যা sizes + 1 হয় (শেষেরটা Total)
-                # তাহলে শেষেরটা বাদ দিই
-                if len(quantities) == len(sizes) + 1:
-                    quantities = quantities[:-1]
-                
-                # এখন quantities এবং sizes match করি
-                # যদি quantities কম হয়, বাকিগুলো 0 দিই
-                final_qtys = []
-                
-                if len(quantities) >= len(sizes):
-                    # সব size এর জন্য quantity আছে
-                    final_qtys = quantities[:len(sizes)]
-                elif len(quantities) < len(sizes):
-                    # কিছু size এ quantity নেই
-                    # এখানে আমরা assume করছি যে quantities গুলো 
-                    # যে order এ আছে সেই order এ sizes এ map হবে
-                    # কিন্তু মাঝে ফাঁকা থাকলে সেটা detect করতে হবে
-                    
-                    # Simple approach: যদি কম থাকে, শেষের দিকে 0 দিই
-                    # এটা সবসময় সঠিক না, কিন্তু better than wrong mapping
-                    
-                    # Advanced approach: Total থেকে verify করি
-                    # যদি line এ Total থাকে, সেটা দিয়ে verify করতে পারি
-                    
-                    total_in_line = None
-                    if len(numbers_with_pos) > 0:
-                        # শেষের number টা Total হতে পারে যদি সেটা বাকিগুলোর যোগফলের কাছাকাছি হয়
-                        potential_total = int(numbers_with_pos[-1][0])
-                        sum_others = sum(int(n[0]) for n in numbers_with_pos[:-1])
-                        
-                        if potential_total == sum_others and len(numbers_with_pos) > 1:
-                            total_in_line = potential_total
-                            quantities = [int(n[0]) for n in numbers_with_pos[:-1]]
-                    
-                    # এখন smart mapping করি
-                    # যদি quantities এখনো কম হয়, তাহলে কিছু size এ 0 আছে
-                    if len(quantities) < len(sizes):
-                        # আমরা জানি না কোন size এ 0 আছে
-                        # তাই আমরা available quantities গুলোকে 
-                        # প্রথম থেকে শুরু করে map করবো এবং বাকিতে 0 দিবো
-                        
-                        # তবে যদি Total available থাকে, সেটা দিয়ে verify করতে পারি
-                        final_qtys = [0] * len(sizes)
-                        
-                        # যতটা quantity আছে, সেগুলো প্রথম থেকে বসাই
-                        for idx, qty in enumerate(quantities):
-                            if idx < len(sizes):
-                                final_qtys[idx] = qty
-                    else:
-                        final_qtys = quantities[:len(sizes)]
-                
-                # Data add করি যদি valid হয়
-                if final_qtys and color_name and sum(final_qtys) > 0:
-                    for idx, size in enumerate(sizes):
-                        extracted_data.append({
-                            'Color': color_name,
-                            'Size': size,
-                            'Quantity': final_qtys[idx] if idx < len(final_qtys) else 0
-                        })
-    
-    except Exception as e:
-        print(f"Error in parse_table_with_positions: {e}")
-    
-    return extracted_data
 
 def extract_data_dynamic(file_path):
     extracted_data = []
@@ -582,18 +488,14 @@ def extract_data_dynamic(file_path):
             metadata = extract_metadata(first_page_text)
             return [], metadata 
 
-        # Order number খুঁজি
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
-        if order_match: 
-            order_no = order_match.group(1)
+        if order_match: order_no = order_match.group(1)
         else:
             alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
-            if alt_match: 
-                order_no = alt_match.group(1)
+            if alt_match: order_no = alt_match.group(1)
         
         order_no = str(order_no).strip()
-        if order_no.endswith("00"): 
-            order_no = order_no[:-2]
+        if order_no.endswith("00"): order_no = order_no[:-2]
 
         for page in reader.pages:
             text = page.extract_text()
@@ -603,10 +505,8 @@ def extract_data_dynamic(file_path):
             
             for i, line in enumerate(lines):
                 line = line.strip()
-                if not line: 
-                    continue
+                if not line: continue
 
-                # Size header line খুঁজি
                 if ("Colo" in line or "Size" in line) and "Total" in line:
                     parts = line.split()
                     try:
@@ -621,8 +521,7 @@ def extract_data_dynamic(file_path):
                         else:
                             sizes = []
                             capturing_data = False
-                    except: 
-                        pass
+                    except: pass
                     continue
                 
                 if capturing_data:
@@ -635,116 +534,65 @@ def extract_data_dynamic(file_path):
                         continue
                         
                     clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
-                    if not re.search(r'[a-zA-Z]', clean_line): 
-                        continue
-                    if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: 
-                        continue
+                    if not re.search(r'[a-zA-Z]', clean_line): continue
+                    if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: continue
 
-                    # ======== সংশোধিত অংশ শুরু ========
+                    # Line থেকে সব numbers extract করি
+                    numbers_in_line = re.findall(r'\b\d+\b', line)
+                    quantities = [int(n) for n in numbers_in_line]
                     
-                    # Color name extract করি - শুধু alphabetic অংশ
-                    color_match = re.match(r'^([A-Za-z][A-Za-z\s\-\/\.]*[A-Za-z])', clean_line)
-                    if color_match:
-                        color_name = color_match.group(1).strip()
-                    else:
-                        # Single word color
-                        color_match = re.match(r'^([A-Za-z]+)', clean_line)
-                        if color_match:
-                            color_name = color_match.group(1).strip()
-                        else:
-                            continue
+                    # Color name extract করি
+                    color_name = re.sub(r'\s*\d+.*$', '', clean_line).strip()
+                    if not color_name: continue
                     
-                    # Line থেকে সব numbers বের করি
-                    all_numbers = re.findall(r'\b(\d+)\b', line)
+                    # ======== মূল সংশোধন: Total-based validation ========
                     
-                    if not all_numbers:
-                        # Vertical format check - পরের lines এ numbers থাকতে পারে
-                        vertical_qtys = []
-                        for next_line in lines[i+1:]:
-                            next_line = next_line.strip()
-                            if "Total" in next_line or re.search(r'[a-zA-Z]', next_line.replace("Spec", "").replace("price", "")): 
-                                break
-                            if re.match(r'^\d+$', next_line): 
-                                vertical_qtys.append(int(next_line))
-                        
-                        if len(vertical_qtys) >= len(sizes):
-                            quantities = vertical_qtys[:len(sizes)]
-                            for idx, size in enumerate(sizes):
-                                extracted_data.append({
-                                    'P.O NO': order_no,
-                                    'Color': color_name,
-                                    'Size': size,
-                                    'Quantity': quantities[idx]
-                                })
+                    if len(quantities) == 0:
                         continue
                     
-                    quantities = [int(n) for n in all_numbers]
+                    # শেষের number টা Total হতে পারে
+                    expected_total = quantities[-1] if quantities else 0
                     
-                    # Total detection এবং validation
-                    # শেষের number টা Total কিনা check করি
-                    has_total_at_end = False
-                    
-                    if len(quantities) >= 2:
-                        potential_total = quantities[-1]
-                        sum_of_others = sum(quantities[:-1])
+                    # Check: বাকি quantities এর যোগফল == শেষের number?
+                    if len(quantities) > 1:
+                        sum_without_last = sum(quantities[:-1])
                         
-                        # যদি শেষের number বাকিগুলোর যোগফলের সমান হয়
-                        if potential_total == sum_of_others:
-                            has_total_at_end = True
-                            quantities = quantities[:-1]  # Total বাদ দিই
+                        if sum_without_last == expected_total:
+                            # হ্যাঁ, শেষেরটা Total
+                            actual_quantities = quantities[:-1]
+                        else:
+                            # না, সব quantity (Total আলাদা column এ নেই অথবা সব size এ value আছে)
+                            actual_quantities = quantities
+                            # এক্ষেত্রে expected_total হবে সব এর যোগফল
+                            expected_total = sum(quantities)
+                    else:
+                        actual_quantities = quantities
+                        expected_total = sum(quantities)
                     
-                    # এখন quantities কে sizes এ map করি
-                    final_qtys = []
+                    # এখন actual_quantities কে sizes এ map করি
+                    num_sizes = len(sizes)
                     
-                    if len(quantities) == len(sizes):
-                        # Perfect match
-                        final_qtys = quantities
+                    if len(actual_quantities) == num_sizes:
+                        # Perfect match - সব size এ value আছে
+                        final_qtys = actual_quantities
                     
-                    elif len(quantities) > len(sizes):
-                        # বেশি numbers আছে - প্রথম len(sizes) টা নিই
-                        final_qtys = quantities[:len(sizes)]
+                    elif len(actual_quantities) < num_sizes:
+                        # কিছু size এ value নেই (ফাঁকা ঘর)
+                        # Total দিয়ে verify করে সঠিক position বের করি
+                        final_qtys = find_correct_quantity_positions(
+                            actual_quantities, 
+                            num_sizes, 
+                            expected_total
+                        )
                     
-                    elif len(quantities) < len(sizes):
-                        # ======== মূল সমস্যার সমাধান ========
-                        # কম numbers আছে - মানে কিছু size এ quantity নেই (ফাঁকা)
-                        # 
-                        # Strategy: 
-                        # 1. যদি Total available থাকে এবং সেটা quantities এর sum এর সমান,
-                        #    তাহলে আমরা জানি available quantities correct আছে
-                        # 2. বাকি positions এ 0 বসাই
-                        #
-                        # তবে কোন positions এ 0 বসাবো সেটা নির্ণয় করা কঠিন
-                        # আমরা assume করছি যে:
-                        # - যদি কম quantity থাকে, সেগুলো প্রথম sizes এর জন্য
-                        # - বাকি (শেষের) sizes এ 0
-                        #
-                        # এটা সবসময় correct না, কিন্তু wrong shifting এর চেয়ে ভালো
-                        
-                        final_qtys = [0] * len(sizes)
-                        
-                        # Available quantities গুলো শুরু থেকে বসাই
-                        for idx, qty in enumerate(quantities):
-                            if idx < len(sizes):
-                                final_qtys[idx] = qty
-                        
-                        # বিকল্প: যদি মাঝের কোনো size এ 0 থাকে সেটা detect করতে
-                        # আমাদের PDF এর actual column positions লাগবে
-                        # যেটা pypdf দিয়ে সহজে পাওয়া যায় না
+                    elif len(actual_quantities) > num_sizes:
+                        # বেশি numbers - প্রথম num_sizes টা নিই
+                        final_qtys = actual_quantities[:num_sizes]
                     
-                    # ======== সংশোধিত অংশ শেষ ========
+                    # ======== সংশোধন শেষ ========
                     
                     # Data add করি
                     if final_qtys and color_name:
-                        # Verify: total quantity যেন reasonable হয়
-                        total_qty = sum(final_qtys)
-                        
-                        # যদি কোনো single quantity অস্বাভাবিক বড় হয় 
-                        # (যেমন 50000+ যেটা আসলে order total হতে পারে)
-                        # সেটা skip করি
-                        max_reasonable_qty = 50000  # একটা reasonable limit
-                        if any(q > max_reasonable_qty for q in final_qtys):
-                            continue
-                        
                         for idx, size in enumerate(sizes):
                             extracted_data.append({
                                 'P.O NO': order_no,
@@ -765,8 +613,7 @@ def extract_data_dynamic(file_path):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if os.path.exists(UPLOAD_FOLDER): 
-            shutil.rmtree(UPLOAD_FOLDER)
+        if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
 
         uploaded_files = request.files.getlist('pdf_files')
@@ -777,8 +624,7 @@ def index():
         }
         
         for file in uploaded_files:
-            if file.filename == '': 
-                continue
+            if file.filename == '': continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             
