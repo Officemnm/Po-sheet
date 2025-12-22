@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FINAL DESIGN)
+#  HTML & CSS TEMPLATES (UNCHANGED)
 # ==========================================
 
 INDEX_HTML = """
@@ -89,30 +89,15 @@ RESULT_HTML = """
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
-        
         .info-box { 
-            background: white; 
-            border: 1px solid #ddd; 
-            border-left: 5px solid #2c3e50; 
-            padding: 10px 15px; 
-            border-radius: 5px; 
-            flex: 2; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; 
+            padding: 10px 15px; border-radius: 5px; flex: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
         }
-
         .total-box { 
-            background: #2c3e50; 
-            color: white; 
-            padding: 10px 15px; 
-            border-radius: 5px; 
-            width: 240px; 
-            text-align: right; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
+            background: #2c3e50; color: white; padding: 10px 15px; 
+            border-radius: 5px; width: 240px; text-align: right; 
+            display: flex; flex-direction: column; justify-content: center; 
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
@@ -124,43 +109,25 @@ RESULT_HTML = """
         .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
 
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
-        
-        .color-header { 
-            background-color: #e9ecef; 
-            color: #2c3e50; 
-            padding: 10px 12px; 
-            font-size: 1.5rem; 
-            font-weight: 900; 
-            border-bottom: 1px solid #dee2e6; 
-            text-transform: uppercase;
-        }
-
+        .color-header { background-color: #e9ecef; color: #2c3e50; padding: 10px 12px; font-size: 1.5rem; font-weight: 900; border-bottom: 1px solid #dee2e6; text-transform: uppercase; }
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
-        
         .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.2rem; text-align: center; border: 1px solid #34495e; padding: 8px 4px; vertical-align: middle; }
         .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 6px 3px; color: #000; font-weight: 800; font-size: 1.15rem; }
-        
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
-        
         .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
+        /* SUMMARY ROW FIX */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
-            background-color: #d1ecff !important; 
-            --bs-table-accent-bg: #d1ecff !important; 
-            color: #000 !important;
-            font-weight: 900 !important; 
-            border-top: 2px solid #aaa !important;
-            font-size: 1.2rem !important; 
+            background-color: #d1ecff !important; --bs-table-accent-bg: #d1ecff !important; 
+            color: #000 !important; font-weight: 900 !important; border-top: 2px solid #aaa !important; font-size: 1.2rem !important; 
         }
-        
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
-        
         .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 0.8rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         @media print {
@@ -168,21 +135,16 @@ RESULT_HTML = """
             body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
-            
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
             .company-name { font-size: 1.8rem; } 
-            
             .info-container { margin-bottom: 10px; }
             .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
-            
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 13pt !important; font-weight: 800 !important; }
-            
             .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; color: #000 !important; font-weight: 900 !important; }
             .color-header { background-color: #f1f1f1 !important; border: 1px solid #000 !important; font-size: 1.4rem !important; font-weight: 900 !important; padding: 5px; margin-top: 10px; box-shadow: inset 0 0 0 9999px #f1f1f1 !important; }
             .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
-            
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; font-size: 8pt !important; }
         }
@@ -256,7 +218,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (CORRECTED TABLE PARSING)
+#  LOGIC PART (STRICT MODE)
 # ==========================================
 
 def is_potential_size(header):
@@ -286,23 +248,18 @@ def sort_sizes(size_list):
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
-    meta = {
-        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
-        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-    }
-    
-    if "KIABI" in first_page_text.upper():
-        meta['buyer'] = "KIABI"
+    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
+    if "KIABI" in first_page_text.upper(): meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
-    if booking_block_match: 
-        raw_booking = booking_block_match.group(1).strip()
-        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
-        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
-        meta['booking'] = clean_booking
+    booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if booking_match: 
+        raw = booking_match.group(1).strip()
+        clean = raw.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean: clean = clean.split("System")[0]
+        meta['booking'] = clean
 
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
@@ -318,21 +275,17 @@ def extract_metadata(first_page_text):
 
     item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
     if item_match: 
-        item_text = item_match.group(1).strip()
-        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
-        meta['item'] = item_text
+        item = item_match.group(1).strip()
+        if "Style" in item: item = item.split("Style")[0].strip()
+        meta['item'] = item
 
     return meta
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    metadata = {
-        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
-        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-    }
+    metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
     order_no = "Unknown"
     
-    # 1. Metadata from pypdf
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
@@ -350,10 +303,9 @@ def extract_data_dynamic(file_path):
         order_no = str(order_no).strip()
         if order_no.endswith("00"): order_no = order_no[:-2]
         
-    except Exception as e:
-        print(f"Metadata error: {e}")
+    except Exception as e: print(f"Meta error: {e}")
 
-    # 2. Strict Table Parsing with pdfplumber
+    # STRICT PDFPLUMBER EXTRACTION
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
@@ -363,66 +315,66 @@ def extract_data_dynamic(file_path):
                     header_row_idx = -1
                     size_map = {} 
                     
-                    # SCAN FOR HEADER: A valid table MUST have 3+ size columns
+                    # 1. FIND HEADER (Must look like Size Header)
                     for i, row in enumerate(table):
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
                         potential_sizes = [c for c in clean_row if is_potential_size(c)]
                         
-                        if len(potential_sizes) >= 3:
+                        # Valid header must have >3 sizes
+                        if len(potential_sizes) > 3:
                             header_row_idx = i
                             for idx, cell in enumerate(clean_row):
                                 if is_potential_size(cell):
                                     size_map[idx] = cell
                             break
                     
-                    # IF NO HEADER FOUND, SKIP THIS TABLE ENTIRELY
-                    if header_row_idx == -1:
-                        continue
+                    if header_row_idx == -1: continue # Skip if no size header found
 
-                    # PROCESS ONLY DATA ROWS
+                    # 2. PARSE DATA ROWS
                     for row in table[header_row_idx+1:]:
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
+                        
                         if not clean_row or len(clean_row) < 2: continue
                         
-                        color_name = clean_row[0].replace('\n', ' ').strip()
-                        if not color_name: continue
+                        # FIRST COLUMN MUST BE TEXT (COLOR NAME)
+                        first_cell = clean_row[0].replace('\n', ' ').strip()
                         
-                        # SKIP TOTAL ROWS OR GARBAGE
-                        if "Total" in color_name or "Grand Total" in color_name: continue
+                        # FILTER OUT GARBAGE (XX, CM, Numbers Only)
+                        if not first_cell: continue
+                        if first_cell.startswith("XX") or "CM" in first_cell: continue # The user's specific problem
+                        if re.match(r'^\d+$', first_cell): continue # If first cell is just a number
+                        if "Total" in first_cell or "Grand Total" in first_cell: continue
                         
-                        # Clean Color Name
-                        color_name = re.sub(r'(Spec\.?|price|Qty).*', '', color_name, flags=re.IGNORECASE).strip()
-                        if not color_name: continue
-
+                        color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
+                        
                         has_valid_qty = False
-                        row_data = []
+                        row_data_temp = []
                         
                         for col_idx, size in size_map.items():
                             if col_idx < len(clean_row):
                                 qty_str = clean_row[col_idx]
+                                # Clean spaces/commas/dots in numbers
                                 qty_str = re.sub(r'[^\d]', '', qty_str)
                                 
-                                val = 0
+                                qty = 0
                                 if qty_str:
-                                    val = int(qty_str)
-                                    # SANITY CHECK: Ignore unrealistic quantities (dates/barcodes)
-                                    if val > 100000: val = 0
+                                    qty = int(qty_str)
+                                    # Sanity Check for unrealistic numbers
+                                    if qty > 100000: qty = 0
                                 
-                                if val > 0: has_valid_qty = True
+                                if qty > 0: has_valid_qty = True
                                 
-                                row_data.append({
+                                row_data_temp.append({
                                     'P.O NO': order_no,
                                     'Color': color_name,
                                     'Size': size,
-                                    'Quantity': val
+                                    'Quantity': qty
                                 })
                         
-                        # Add rows only if they have real data
                         if has_valid_qty:
-                            extracted_data.extend(row_data)
+                            extracted_data.extend(row_data_temp)
 
-    except Exception as e:
-        print(f"Table error with pdfplumber: {e}")
+    except Exception as e: print(f"Table error: {e}")
 
     return extracted_data, metadata
 
@@ -438,10 +390,7 @@ def index():
 
         uploaded_files = request.files.getlist('pdf_files')
         all_data = []
-        final_meta = {
-            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
-            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
-        }
+        final_meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
         
         for file in uploaded_files:
             if file.filename == '': continue
@@ -450,11 +399,8 @@ def index():
             
             data, meta = extract_data_dynamic(file_path)
             
-            if meta['buyer'] != 'N/A':
-                final_meta = meta
-            
-            if data:
-                all_data.extend(data)
+            if meta['buyer'] != 'N/A': final_meta = meta
+            if data: all_data.extend(data)
         
         if not all_data:
             return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
@@ -485,7 +431,6 @@ def index():
             qty_plus_3.name = '3% Order Qty'
             
             pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
-            
             pivot = pivot.reset_index()
             pivot = pivot.rename(columns={'index': 'P.O NO'})
             pivot.columns.name = None
@@ -503,10 +448,7 @@ def index():
 
             final_tables.append({'color': color, 'table': table_html})
             
-        return render_template_string(RESULT_HTML, 
-                                      tables=final_tables, 
-                                      meta=final_meta, 
-                                      grand_total=f"{grand_total_qty:,}")
+        return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total_qty:,}")
 
     return render_template_string(INDEX_HTML)
 
