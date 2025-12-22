@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (FINAL DESIGN)
 # ==========================================
 
 INDEX_HTML = """
@@ -116,15 +116,7 @@ RESULT_HTML = """
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
-        .info-item { 
-            margin-bottom: 6px; 
-            font-size: 1.3rem; 
-            font-weight: 700; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-        }
-        
+        .info-item { margin-bottom: 6px; font-size: 1.3rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
         .info-value { font-weight: 800; color: #000; }
         
@@ -145,26 +137,8 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
-        .table th { 
-            background-color: #2c3e50; 
-            color: white; 
-            font-weight: 900; 
-            font-size: 1.2rem; 
-            text-align: center; 
-            border: 1px solid #34495e; 
-            padding: 8px 4px; 
-            vertical-align: middle; 
-        }
-        
-        .table td { 
-            text-align: center; 
-            vertical-align: middle; 
-            border: 1px solid #dee2e6; 
-            padding: 6px 3px; 
-            color: #000; 
-            font-weight: 800; 
-            font-size: 1.15rem; 
-        }
+        .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.2rem; text-align: center; border: 1px solid #34495e; padding: 8px 4px; vertical-align: middle; }
+        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 6px 3px; color: #000; font-weight: 800; font-size: 1.15rem; }
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
         
@@ -187,27 +161,11 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        .footer-credit { 
-            text-align: center; 
-            margin-top: 30px; 
-            margin-bottom: 20px; 
-            font-size: 0.8rem; 
-            color: #2c3e50; 
-            padding-top: 10px; 
-            border-top: 1px solid #ddd; 
-        }
+        .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 0.8rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
 
         @media print {
             @page { margin: 5mm; size: portrait; }
-            
-            body { 
-                background-color: white; 
-                padding: 0; 
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            
+            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
@@ -215,57 +173,18 @@ RESULT_HTML = """
             .company-name { font-size: 1.8rem; } 
             
             .info-container { margin-bottom: 10px; }
-            .info-box { 
-                border: 1px solid #000 !important; 
-                border-left: 5px solid #000 !important; 
-                padding: 5px 10px; 
-                display: grid; 
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
+            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
+            .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 13pt !important; font-weight: 800 !important; }
             
-            .table th, .table td { 
-                border: 1px solid #000 !important; 
-                padding: 2px !important; 
-                font-size: 13pt !important; 
-                font-weight: 800 !important;
-            }
-            
-            .table-striped tbody tr.summary-row td { 
-                background-color: #d1ecff !important; 
-                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
-                color: #000 !important;
-                font-weight: 900 !important;
-            }
-            
-            .color-header { 
-                background-color: #f1f1f1 !important; 
-                border: 1px solid #000 !important; 
-                font-size: 1.4rem !important; 
-                font-weight: 900 !important;
-                padding: 5px;
-                margin-top: 10px;
-                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
-            }
-            
-            .total-col-header {
-                background-color: #e8f6f3 !important;
-                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
-                color: #000 !important;
-            }
+            .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; color: #000 !important; font-weight: 900 !important; }
+            .color-header { background-color: #f1f1f1 !important; border: 1px solid #000 !important; font-size: 1.4rem !important; font-weight: 900 !important; padding: 5px; margin-top: 10px; box-shadow: inset 0 0 0 9999px #f1f1f1 !important; }
+            .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
-            
-            .footer-credit { 
-                display: block !important; 
-                color: black; 
-                border-top: 1px solid #000; 
-                margin-top: 10px; 
-                font-size: 8pt !important; 
-            }
+            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; font-size: 8pt !important; }
         }
     </style>
 </head>
@@ -337,7 +256,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (UPDATED WITH PDFPLUMBER)
+#  LOGIC PART (CORRECTED TABLE PARSING)
 # ==========================================
 
 def is_potential_size(header):
@@ -413,7 +332,7 @@ def extract_data_dynamic(file_path):
     }
     order_no = "Unknown"
     
-    # 1. Metadata Extraction using pypdf
+    # 1. Metadata from pypdf
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
@@ -434,7 +353,7 @@ def extract_data_dynamic(file_path):
     except Exception as e:
         print(f"Metadata error: {e}")
 
-    # 2. Table Extraction using pdfplumber
+    # 2. Strict Table Parsing with pdfplumber
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
@@ -444,48 +363,63 @@ def extract_data_dynamic(file_path):
                     header_row_idx = -1
                     size_map = {} 
                     
+                    # SCAN FOR HEADER: A valid table MUST have 3+ size columns
                     for i, row in enumerate(table):
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
                         potential_sizes = [c for c in clean_row if is_potential_size(c)]
                         
-                        if len(potential_sizes) > 3:
+                        if len(potential_sizes) >= 3:
                             header_row_idx = i
                             for idx, cell in enumerate(clean_row):
                                 if is_potential_size(cell):
                                     size_map[idx] = cell
                             break
                     
-                    if header_row_idx != -1:
-                        for row in table[header_row_idx+1:]:
-                            clean_row = [str(cell).strip() if cell else '' for cell in row]
-                            
-                            if not clean_row or len(clean_row) < 2: continue
-                            
-                            color_name = clean_row[0].replace('\n', ' ').strip()
-                            color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', color_name, flags=re.IGNORECASE).strip()
-                            
-                            if not color_name or "Total" in color_name or "Grand Total" in color_name:
-                                continue
-                            
-                            for col_idx, size in size_map.items():
-                                if col_idx < len(clean_row):
-                                    qty_str = clean_row[col_idx]
-                                    qty_str = re.sub(r'[^\d]', '', qty_str)
-                                    
-                                    qty = int(qty_str) if qty_str else 0
-                                    
-                                    # === SANITY CHECK (CRITICAL FIX) ===
-                                    # যদি ১ লাখের বেশি হয়, তবে ধরে নেওয়া হবে এটি ভুল ডাটা (Date/Phone/Barcode)
-                                    if qty > 100000:
-                                        qty = 0
-                                    
-                                    if qty >= 0: 
-                                        extracted_data.append({
-                                            'P.O NO': order_no,
-                                            'Color': color_name,
-                                            'Size': size,
-                                            'Quantity': qty
-                                        })
+                    # IF NO HEADER FOUND, SKIP THIS TABLE ENTIRELY
+                    if header_row_idx == -1:
+                        continue
+
+                    # PROCESS ONLY DATA ROWS
+                    for row in table[header_row_idx+1:]:
+                        clean_row = [str(cell).strip() if cell else '' for cell in row]
+                        if not clean_row or len(clean_row) < 2: continue
+                        
+                        color_name = clean_row[0].replace('\n', ' ').strip()
+                        if not color_name: continue
+                        
+                        # SKIP TOTAL ROWS OR GARBAGE
+                        if "Total" in color_name or "Grand Total" in color_name: continue
+                        
+                        # Clean Color Name
+                        color_name = re.sub(r'(Spec\.?|price|Qty).*', '', color_name, flags=re.IGNORECASE).strip()
+                        if not color_name: continue
+
+                        has_valid_qty = False
+                        row_data = []
+                        
+                        for col_idx, size in size_map.items():
+                            if col_idx < len(clean_row):
+                                qty_str = clean_row[col_idx]
+                                qty_str = re.sub(r'[^\d]', '', qty_str)
+                                
+                                val = 0
+                                if qty_str:
+                                    val = int(qty_str)
+                                    # SANITY CHECK: Ignore unrealistic quantities (dates/barcodes)
+                                    if val > 100000: val = 0
+                                
+                                if val > 0: has_valid_qty = True
+                                
+                                row_data.append({
+                                    'P.O NO': order_no,
+                                    'Color': color_name,
+                                    'Size': size,
+                                    'Quantity': val
+                                })
+                        
+                        # Add rows only if they have real data
+                        if has_valid_qty:
+                            extracted_data.extend(row_data)
 
     except Exception as e:
         print(f"Table error with pdfplumber: {e}")
