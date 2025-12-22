@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (FULL VERSION)
 # ==========================================
 
 INDEX_HTML = """
@@ -58,7 +58,9 @@ INDEX_HTML = """
                             </div>
                             <button type="submit" class="btn btn-primary btn-upload btn-lg w-100">Generate Report</button>
                         </form>
-                        <div class="footer-credit">Report Created By <strong>Mehedi Hasan</strong></div>
+                        <div class="footer-credit">
+                            Report Created By <strong>Mehedi Hasan</strong>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -79,51 +81,213 @@ RESULT_HTML = """
     <style>
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
+        
+        /* Header Styles */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
+        
+        /* Info Boxes */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
-        .info-box { background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; padding: 10px 15px; border-radius: 5px; flex: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .total-box { background: #2c3e50; color: white; padding: 10px 15px; border-radius: 5px; width: 240px; text-align: right; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); }
-        .info-item { margin-bottom: 6px; font-size: 1.3rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .info-box { 
+            background: white; 
+            border: 1px solid #ddd; 
+            border-left: 5px solid #2c3e50; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            flex: 2; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .total-box { 
+            background: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            width: 240px; 
+            text-align: right; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
+        }
+        
+        .info-item { 
+            margin-bottom: 6px; 
+            font-size: 1.3rem; 
+            font-weight: 700; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        
         .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
         .info-value { font-weight: 800; color: #000; }
+        
         .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
+
+        /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
-        .color-header { background-color: #e9ecef; color: #2c3e50; padding: 10px 12px; font-size: 1.5rem; font-weight: 900; border-bottom: 1px solid #dee2e6; text-transform: uppercase; }
+        
+        .color-header { 
+            background-color: #e9ecef; 
+            color: #2c3e50; 
+            padding: 10px 12px; 
+            font-size: 1.5rem; 
+            font-weight: 900; 
+            border-bottom: 1px solid #dee2e6; 
+            text-transform: uppercase;
+        }
+
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
-        .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.2rem; text-align: center; border: 1px solid #34495e; padding: 8px 4px; vertical-align: middle; }
-        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 6px 3px; color: #000; font-weight: 800; font-size: 1.15rem; }
+        
+        .table th { 
+            background-color: #2c3e50; 
+            color: white; 
+            font-weight: 900; 
+            font-size: 1.2rem; 
+            text-align: center; 
+            border: 1px solid #34495e; 
+            padding: 8px 4px; 
+            vertical-align: middle; 
+        }
+        
+        .table td { 
+            text-align: center; 
+            vertical-align: middle; 
+            border: 1px solid #dee2e6; 
+            padding: 6px 3px; 
+            color: #000; 
+            font-weight: 800; 
+            font-size: 1.15rem; 
+        }
+        
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
+        
         .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
-        .table-striped tbody tr.summary-row, .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; color: #000 !important; font-weight: 900 !important; border-top: 2px solid #aaa !important; font-size: 1.2rem !important; }
+
+        .table-striped tbody tr.summary-row,
+        .table-striped tbody tr.summary-row td { 
+            background-color: #d1ecff !important; 
+            --bs-table-accent-bg: #d1ecff !important; 
+            color: #000 !important;
+            font-weight: 900 !important; 
+            border-top: 2px solid #aaa !important;
+            font-size: 1.2rem !important; 
+        }
+        
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
-        .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 0.8rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
+
+        .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
+        
+        .footer-credit { 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 20px; 
+            font-size: 0.8rem; 
+            color: #2c3e50; 
+            padding-top: 10px; 
+            border-top: 1px solid #ddd; 
+        }
+
+        /* PRINT STYLES */
         @media print {
             @page { margin: 5mm; size: portrait; }
-            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            
+            body { 
+                background-color: white; 
+                padding: 0; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+            }
+            
+            .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
-            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; }
-            .table th, .table td { border: 1px solid #000 !important; font-size: 13pt !important; font-weight: 800 !important; }
-            .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; }
+            
+            .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+            .company-name { font-size: 1.8rem; } 
+            
+            .info-container { margin-bottom: 10px; }
+            .info-box { 
+                border: 1px solid #000 !important; 
+                border-left: 5px solid #000 !important; 
+                padding: 5px 10px; 
+                display: grid; 
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
+            
+            .info-item { font-size: 13pt !important; font-weight: 800 !important; }
+            
+            .table th, .table td { 
+                border: 1px solid #000 !important; 
+                padding: 2px !important; 
+                font-size: 13pt !important; 
+                font-weight: 800 !important;
+            }
+            
+            .table-striped tbody tr.summary-row td { 
+                background-color: #d1ecff !important; 
+                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
+                color: #000 !important;
+                font-weight: 900 !important;
+            }
+            
+            .color-header { 
+                background-color: #f1f1f1 !important; 
+                border: 1px solid #000 !important; 
+                font-size: 1.4rem !important; 
+                font-weight: 900 !important;
+                padding: 5px;
+                margin-top: 10px;
+                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
+            }
+            
+            .total-col-header {
+                background-color: #e8f6f3 !important;
+                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
+                color: #000 !important;
+            }
+            
+            .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
+            
+            .footer-credit { 
+                display: block !important; 
+                color: black; 
+                border-top: 1px solid #000; 
+                margin-top: 10px; 
+                font-size: 8pt !important; 
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="action-bar no-print d-flex justify-content-end mb-3">
-            <a href="/" class="btn btn-outline-secondary rounded-pill px-4 me-2">Upload New</a>
-            <button onclick="window.print()" class="btn btn-print btn-primary">🖨️ Print Report</button>
+        <div class="action-bar no-print">
+            <a href="/" class="btn btn-outline-secondary rounded-pill px-4">Upload New</a>
+            <button onclick="window.print()" class="btn btn-print">🖨️ Print Report</button>
         </div>
+
         <div class="company-header">
             <div class="company-name">Cotton Clothing BD Limited</div>
             <div class="report-title">Purchase Order Summary</div>
             <div class="date-section">Date: <span id="date"></span></div>
         </div>
+
+        {% if message %}
+            <div class="alert alert-warning text-center no-print">{{ message }}</div>
+        {% endif %}
+
         {% if tables %}
             <div class="info-container">
                 <div class="info-box">
@@ -138,160 +302,287 @@ RESULT_HTML = """
                         <div class="info-item"><span class="info-label">Item:</span> <span class="info-value">{{ meta.item }}</span></div>
                     </div>
                 </div>
+                
                 <div class="total-box">
                     <div class="total-label">Grand Total</div>
                     <div class="total-value">{{ grand_total }}</div>
                     <small>Pieces</small>
                 </div>
             </div>
+
             {% for item in tables %}
                 <div class="table-card">
-                    <div class="color-header">COLOR: {{ item.color }}</div>
-                    <div class="table-responsive">{{ item.table | safe }}</div>
+                    <div class="color-header">
+                        COLOR: {{ item.color }}
+                    </div>
+                    <div class="table-responsive">
+                        {{ item.table | safe }}
+                    </div>
                 </div>
             {% endfor %}
-            <div class="footer-credit">Report Created By <strong>Mehedi Hasan</strong></div>
+            
+            <div class="footer-credit">
+                Report Created By <strong>Mehedi Hasan</strong>
+            </div>
         {% endif %}
     </div>
+
     <script>
         const dateObj = new Date();
-        const d = String(dateObj.getDate()).padStart(2, '0');
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        document.getElementById('date').innerText = `${d}-${m}-${dateObj.getFullYear()}`;
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const year = dateObj.getFullYear();
+        document.getElementById('date').innerText = `${day}-${month}-${year}`;
     </script>
 </body>
 </html>
 """
 
 # ==========================================
-#  LOGIC PART (ERROR FREE)
+#  LOGIC PART (FULL & FIXED)
 # ==========================================
 
 def is_potential_size(header):
     h = header.strip().upper()
-    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]: return False
-    if re.match(r'^\d+[AMYT]$|^\d+$|^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
+    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
+        return False
+    if re.match(r'^\d+$', h): return True
+    if re.match(r'^\d+[AMYT]$', h): return True
+    if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
     return False
 
 def sort_sizes(size_list):
-    STANDARD_ORDER = ['0M', '1M', '3M', '6M', '9M', '12M', '18M', '24M', '36M', '2A', '3A', '4A', '5A', '6A', '8A', '10A', '12A', '14A', '16A', '18A', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'TU']
+    STANDARD_ORDER = [
+        '0M', '1M', '3M', '6M', '9M', '12M', '18M', '24M', '36M',
+        '2A', '3A', '4A', '5A', '6A', '8A', '10A', '12A', '14A', '16A', '18A',
+        'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL',
+        'TU', 'One Size'
+    ]
     def sort_key(s):
         s = s.strip()
         if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
         if s.isdigit(): return (1, int(s))
-        return (2, s)
+        match = re.match(r'^(\d+)([A-Z]+)$', s)
+        if match: return (2, int(match.group(1)), match.group(2))
+        return (3, s)
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
-    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
+    meta = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
+    
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
-    
-    booking_match = re.search(r"Computer Reference:\s*([\w/]+)", first_page_text, re.IGNORECASE)
-    if booking_match: meta['booking'] = booking_match.group(1).strip()
-    
-    style_match = re.search(r"Article:\s*([\s\S]*?)(?:Certification|Season|$)", first_page_text, re.IGNORECASE)
-    if style_match: meta['style'] = style_match.group(1).strip().split('\n')[0][:20]
-    
-    season_match = re.search(r"Season\s*[:\n\"]*([\w\d\s]+)", first_page_text, re.IGNORECASE)
+
+    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if not booking_block_match:
+        booking_block_match = re.search(r"Computer Reference:\s*([\w/]+)", first_page_text, re.IGNORECASE)
+        
+    if booking_block_match: 
+        raw_booking = booking_block_match.group(1).strip()
+        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
+        meta['booking'] = clean_booking
+
+    style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
+    if not style_match:
+        style_match = re.search(r"Article:\s*([\s\S]*?)(?:Certification|Season|$)", first_page_text, re.IGNORECASE)
+        
+    if style_match: 
+        meta['style'] = style_match.group(1).strip().split('\n')[0][:25]
+
+    season_match = re.search(r"Season\s*[:\n\"]*([\w\d\s-]+)", first_page_text, re.IGNORECASE)
     if season_match: meta['season'] = season_match.group(1).strip()
-    
-    dept_match = re.search(r"Process:\s*([A-Za-z\s]+)", first_page_text, re.IGNORECASE)
+
+    dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
+    if not dept_match:
+         dept_match = re.search(r"Process:\s*([A-Za-z\s]+)", first_page_text, re.IGNORECASE)
     if dept_match: meta['dept'] = dept_match.group(1).strip()
-    
-    item_match = re.search(r"Article:[\s\n]*([A-Z0-9\s-]+)", first_page_text, re.IGNORECASE)
-    if item_match: meta['item'] = "T-SHIRT" if "TS" in item_match.group(1) else "GARMENTS"
-    
+
+    item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
+    if not item_match:
+        item_match = re.search(r"Article:[\s\n]*([A-Z0-9\s-]+)", first_page_text, re.IGNORECASE)
+        
+    if item_match: 
+        item_text = item_match.group(1).strip()
+        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
+        if "TS" in item_text: item_text = "T-SHIRT"
+        meta['item'] = item_text
+
     return meta
 
 def extract_data_dynamic(file_path):
-    extracted_data, order_no = [], "Unknown"
+    extracted_data = []
+    metadata = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
+    order_no = "Unknown"
+    
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
-        meta = extract_metadata(first_page_text)
+        metadata = extract_metadata(first_page_text)
         
-        if "Main Fabric Booking" in first_page_text: return [], meta
-        
+        if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
+            return [], metadata 
+
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
-        if order_match: 
-            order_no = str(order_match.group(1)).strip()
-            if order_no.endswith("00"): order_no = order_no[:-2]
+        if order_match: order_no = order_match.group(1)
+        
+        order_no = str(order_no).strip()
+        if order_no.endswith("00"): order_no = order_no[:-2]
 
         for page in reader.pages:
-            lines = page.extract_text().split('\n')
-            sizes, capturing_data = [], False
+            text = page.extract_text()
+            lines = text.split('\n')
+            sizes = []
+            capturing_data = False
+            
             for i, line in enumerate(lines):
+                line = line.strip()
+                if not line: continue
+
                 if ("Colo" in line or "Size" in line) and "Total" in line:
-                    sizes = [s for s in line.split() if is_potential_size(s)]
-                    if sizes: capturing_data = True
+                    parts = line.split()
+                    sizes = [s for s in parts if is_potential_size(s)]
+                    if sizes:
+                        capturing_data = True
                     continue
                 
                 if capturing_data:
                     if "Total Quantity" in line or "Total Amount" in line:
-                        capturing_data = False; continue
-                    if not re.search(r'[a-zA-Z]', line) or "Spec. price" not in line: continue
+                        capturing_data = False
+                        continue
                     
+                    if not re.search(r'[a-zA-Z]', line) or "Spec. price" not in line: 
+                        continue
+
                     color_name = line.split("Spec. price")[0].strip()
                     nums = [int(n) for n in re.findall(r'\b\d+\b', line.split("Spec. price")[1])]
                     
                     if not nums: continue
+                    
+                    # Logic for handling total and gaps
                     row_total = nums[-1]
-                    qty_data = nums[:-1]
+                    qty_data = nums[:-1] 
                     
                     final_mapped_qtys = [0] * len(sizes)
+                    
                     if len(qty_data) == len(sizes):
                         final_mapped_qtys = qty_data
                     elif len(qty_data) < len(sizes):
+                        # Gap Detection Logic
+                        found_gap = False
                         for gap_idx in range(len(sizes)):
                             temp_list = qty_data[:gap_idx] + [0] + qty_data[gap_idx:]
                             if sum(temp_list[:len(sizes)]) == row_total:
                                 final_mapped_qtys = temp_list[:len(sizes)]
+                                found_gap = True
                                 break
+                        if not found_gap: 
+                             # Fallback if gap logic fails
+                             final_mapped_qtys = qty_data + [0]*(len(sizes)-len(qty_data))
                     else:
                         final_mapped_qtys = qty_data[:len(sizes)]
                     
                     for idx, s in enumerate(sizes):
-                        extracted_data.append({'P.O NO': order_no, 'Color': color_name, 'Size': s, 'Quantity': final_mapped_qtys[idx]})
-    except Exception as e: print(f"Error: {e}")
-    return extracted_data, meta
+                        extracted_data.append({
+                            'P.O NO': order_no,
+                            'Color': color_name,
+                            'Size': s,
+                            'Quantity': final_mapped_qtys[idx]
+                        })
+
+    except Exception as e: print(f"Error processing file: {e}")
+    return extracted_data, metadata
+
+# ==========================================
+#  FLASK ROUTES
+# ==========================================
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
-        files = request.files.getlist('pdf_files')
-        all_data, final_meta = [], {}
-        for f in files:
-            if f.filename:
-                path = os.path.join(app.config['UPLOAD_FOLDER'], f.filename)
-                f.save(path)
-                d, m = extract_data_dynamic(path)
-                if m.get('buyer') != 'N/A': final_meta = m
-                all_data.extend(d)
+
+        uploaded_files = request.files.getlist('pdf_files')
+        all_data = []
+        final_meta = {
+            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
+            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+        }
         
-        if not all_data: return render_template_string(RESULT_HTML, tables=None)
+        for file in uploaded_files:
+            if file.filename == '': continue
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(file_path)
+            
+            data, meta = extract_data_dynamic(file_path)
+            
+            if meta.get('buyer') != 'N/A':
+                final_meta = meta
+            
+            if data:
+                all_data.extend(data)
         
+        if not all_data:
+            return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
+
         df = pd.DataFrame(all_data)
-        final_tables, grand_total = [], 0
-        for color in df['Color'].unique():
-            pdf = df[df['Color'] == color].pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
-            pdf = pdf[sort_sizes(pdf.columns.tolist())]
-            pdf['Total'] = pdf.sum(axis=1)
-            grand_total += pdf['Total'].sum()
-            act, q3 = pdf.sum(), (pdf.sum()*1.03).round().astype(int)
-            act.name, q3.name = 'Actual Qty', '3% Order Qty'
-            pdf = pd.concat([pdf, act.to_frame().T, q3.to_frame().T]).reset_index().rename(columns={'index': 'P.O NO'})
+        df['Color'] = df['Color'].str.strip()
+        df = df[df['Color'] != ""]
+        unique_colors = df['Color'].unique()
+        
+        final_tables = []
+        grand_total_qty = 0
+
+        for color in unique_colors:
+            color_df = df[df['Color'] == color]
+            pivot = color_df.pivot_table(index='P.O NO', columns='Size', values='Quantity', aggfunc='sum', fill_value=0)
             
-            html = pdf.to_html(classes='table table-bordered table-striped', index=False, border=0)
-            html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', html)
-            html = html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
-            html = html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>').replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
-            html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', html)
-            final_tables.append({'color': color, 'table': html})
+            existing_sizes = pivot.columns.tolist()
+            sorted_sizes = sort_sizes(existing_sizes)
+            pivot = pivot[sorted_sizes]
             
-        return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total:,}")
+            pivot['Total'] = pivot.sum(axis=1)
+            grand_total_qty += pivot['Total'].sum()
+
+            actual_qty = pivot.sum()
+            actual_qty.name = 'Actual Qty'
+            
+            qty_plus_3 = (actual_qty * 1.03).round().astype(int)
+            qty_plus_3.name = '3% Order Qty'
+            
+            pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
+            
+            pivot = pivot.reset_index()
+            pivot = pivot.rename(columns={'index': 'P.O NO'})
+            pivot.columns.name = None
+
+            pd.set_option('colheader_justify', 'center')
+            table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
+            
+            # Injections
+            table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
+            table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
+            table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
+            
+            # Color Fix
+            table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
+            table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
+            table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
+
+            final_tables.append({'color': color, 'table': table_html})
+            
+        return render_template_string(RESULT_HTML, 
+                                      tables=final_tables, 
+                                      meta=final_meta, 
+                                      grand_total=f"{grand_total_qty:,}")
+
     return render_template_string(INDEX_HTML)
 
 if __name__ == "__main__":
