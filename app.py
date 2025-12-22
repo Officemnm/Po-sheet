@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template_string
 import pypdf
-import pdfplumber
 import pandas as pd
 import os
 import re
@@ -17,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (BIG FONT & BOLD DESIGN)
+#  HTML & CSS TEMPLATES (BIG FONT & BOLD)
 # ==========================================
 
 INDEX_HTML = """
@@ -83,70 +82,205 @@ RESULT_HTML = """
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         
+        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
+        /* Info Boxes (Text Size Increased +3pt approx) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
+        
         .info-box { 
-            background: white; border: 1px solid #ddd; border-left: 5px solid #2c3e50; 
-            padding: 10px 15px; border-radius: 5px; flex: 2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+            background: white; 
+            border: 1px solid #ddd; 
+            border-left: 5px solid #2c3e50; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            flex: 2; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
+
         .total-box { 
-            background: #2c3e50; color: white; padding: 10px 15px; 
-            border-radius: 5px; width: 240px; text-align: right; 
-            display: flex; flex-direction: column; justify-content: center; 
+            background: #2c3e50; 
+            color: white; 
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            width: 240px; /* Width increased for bigger text */
+            text-align: right; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
-        .info-item { margin-bottom: 6px; font-size: 1.3rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Increased Font Size for Info Items */
+        .info-item { 
+            margin-bottom: 6px; 
+            font-size: 1.3rem; /* Increased (~13pt/14pt) */
+            font-weight: 700; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        
         .info-label { font-weight: 800; color: #444; width: 90px; display: inline-block; }
         .info-value { font-weight: 800; color: #000; }
         
         .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
 
+        /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
-        .color-header { background-color: #e9ecef; color: #2c3e50; padding: 10px 12px; font-size: 1.5rem; font-weight: 900; border-bottom: 1px solid #dee2e6; text-transform: uppercase; }
+        
+        .color-header { 
+            background-color: #e9ecef; 
+            color: #2c3e50; 
+            padding: 10px 12px; 
+            font-size: 1.5rem; /* Increased Header Size */
+            font-weight: 900; 
+            border-bottom: 1px solid #dee2e6; 
+            text-transform: uppercase;
+        }
+
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
-        .table th { background-color: #2c3e50; color: white; font-weight: 900; font-size: 1.2rem; text-align: center; border: 1px solid #34495e; padding: 8px 4px; vertical-align: middle; }
-        .table td { text-align: center; vertical-align: middle; border: 1px solid #dee2e6; padding: 6px 3px; color: #000; font-weight: 800; font-size: 1.15rem; }
+        
+        /* Table Header Cells (Bigger & Bolder) */
+        .table th { 
+            background-color: #2c3e50; 
+            color: white; 
+            font-weight: 900; 
+            font-size: 1.2rem; /* Increased (~13-14pt) */
+            text-align: center; 
+            border: 1px solid #34495e; 
+            padding: 8px 4px; 
+            vertical-align: middle; 
+        }
+        
+        /* Table Data Cells (Bigger & Bolder) */
+        .table td { 
+            text-align: center; 
+            vertical-align: middle; 
+            border: 1px solid #dee2e6; 
+            padding: 6px 3px; 
+            color: #000; 
+            font-weight: 800; /* Extra Bold */
+            font-size: 1.15rem; /* Increased (~13pt) */
+        }
+        
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
+        
         .order-col { font-weight: 900 !important; text-align: center !important; background-color: #fdfdfd; white-space: nowrap; width: 1%; }
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* SUMMARY ROW FIX */
+        /* SUMMARY ROW STYLES (Light Blue & Bold) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
-            background-color: #d1ecff !important; --bs-table-accent-bg: #d1ecff !important; 
-            color: #000 !important; font-weight: 900 !important; border-top: 2px solid #aaa !important; font-size: 1.2rem !important; 
+            background-color: #d1ecff !important; 
+            --bs-table-accent-bg: #d1ecff !important; 
+            color: #000 !important;
+            font-weight: 900 !important; /* Extra Bold */
+            border-top: 2px solid #aaa !important;
+            font-size: 1.2rem !important; /* Even Bigger for Summary */
         }
+        
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
 
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
-        .footer-credit { text-align: center; margin-top: 30px; margin-bottom: 20px; font-size: 0.8rem; color: #2c3e50; padding-top: 10px; border-top: 1px solid #ddd; }
+        
+        /* Footer Smaller (-1pt) */
+        .footer-credit { 
+            text-align: center; 
+            margin-top: 30px; 
+            margin-bottom: 20px; 
+            font-size: 0.8rem; /* Reduced Size (~9pt) */
+            color: #2c3e50; 
+            padding-top: 10px; 
+            border-top: 1px solid #ddd; 
+        }
 
+        /* =========================================
+           PRINT SPECIFIC STYLES
+           ========================================= */
         @media print {
             @page { margin: 5mm; size: portrait; }
-            body { background-color: white; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            
+            body { 
+                background-color: white; 
+                padding: 0; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
+            
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+            /* Header Size Unchanged in Print */
             .company-name { font-size: 1.8rem; } 
+            
             .info-container { margin-bottom: 10px; }
-            .info-box { border: 1px solid #000 !important; border-left: 5px solid #000 !important; padding: 5px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .info-box { 
+                border: 1px solid #000 !important; 
+                border-left: 5px solid #000 !important; 
+                padding: 5px 10px; 
+                display: grid; 
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
+            
+            /* Info Items Print Size (+3pt) */
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
-            .table th, .table td { border: 1px solid #000 !important; padding: 2px !important; font-size: 13pt !important; font-weight: 800 !important; }
-            .table-striped tbody tr.summary-row td { background-color: #d1ecff !important; box-shadow: inset 0 0 0 9999px #d1ecff !important; color: #000 !important; font-weight: 900 !important; }
-            .color-header { background-color: #f1f1f1 !important; border: 1px solid #000 !important; font-size: 1.4rem !important; font-weight: 900 !important; padding: 5px; margin-top: 10px; box-shadow: inset 0 0 0 9999px #f1f1f1 !important; }
-            .total-col-header { background-color: #e8f6f3 !important; box-shadow: inset 0 0 0 9999px #e8f6f3 !important; color: #000 !important; }
+            
+            /* Table Print Size (+3pt) */
+            .table th, .table td { 
+                border: 1px solid #000 !important; 
+                padding: 2px !important; 
+                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
+                font-weight: 800 !important;
+            }
+            
+            /* Summary Row Color Force */
+            .table-striped tbody tr.summary-row td { 
+                background-color: #d1ecff !important; 
+                box-shadow: inset 0 0 0 9999px #d1ecff !important; 
+                color: #000 !important;
+                font-weight: 900 !important;
+            }
+            
+            .color-header { 
+                background-color: #f1f1f1 !important; 
+                border: 1px solid #000 !important; 
+                font-size: 1.4rem !important; /* Bigger */
+                font-weight: 900 !important;
+                padding: 5px;
+                margin-top: 10px;
+                box-shadow: inset 0 0 0 9999px #f1f1f1 !important;
+            }
+            
+            .total-col-header {
+                background-color: #e8f6f3 !important;
+                box-shadow: inset 0 0 0 9999px #e8f6f3 !important;
+                color: #000 !important;
+            }
+            
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
-            .footer-credit { display: block !important; color: black; border-top: 1px solid #000; margin-top: 10px; font-size: 8pt !important; }
+            
+            /* Footer Smaller */
+            .footer-credit { 
+                display: block !important; 
+                color: black; 
+                border-top: 1px solid #000; 
+                margin-top: 10px; 
+                font-size: 8pt !important; /* Smaller */
+            }
         }
     </style>
 </head>
@@ -218,17 +352,17 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (CORRECTED TABLE EXTRACTION)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
     h = header.strip().upper()
     if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
         return False
-    # Regular patterns for sizes
-    if re.match(r'^\d+$', h): return True 
-    if re.match(r'^\d+\s*[AMYT]$', h): return True 
+    if re.match(r'^\d+$', h): return True
+    if re.match(r'^\d+[AMYT]$', h): return True
     if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
+    if re.match(r'^[A-Z]\d{2,}$', h): return False
     return False
 
 def sort_sizes(size_list):
@@ -240,27 +374,31 @@ def sort_sizes(size_list):
     ]
     def sort_key(s):
         s = s.strip()
-        s_clean = s.replace(' ', '')
-        if s_clean in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s_clean))
+        if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
         if s.isdigit(): return (1, int(s))
-        match = re.match(r'^(\d+)\s*([A-Z]+)$', s)
+        match = re.match(r'^(\d+)([A-Z]+)$', s)
         if match: return (2, int(match.group(1)), match.group(2))
         return (3, s)
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
-    meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
-    if "KIABI" in first_page_text.upper(): meta['buyer'] = "KIABI"
+    meta = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
+    
+    if "KIABI" in first_page_text.upper():
+        meta['buyer'] = "KIABI"
     else:
         buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
         if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
-    booking_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
-    if booking_match: 
-        raw = booking_match.group(1).strip()
-        clean = raw.replace('\n', '').replace('\r', '').replace(' ', '')
-        if "System" in clean: clean = clean.split("System")[0]
-        meta['booking'] = clean
+    booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
+    if booking_block_match: 
+        raw_booking = booking_block_match.group(1).strip()
+        clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
+        if "System" in clean_booking: clean_booking = clean_booking.split("System")[0]
+        meta['booking'] = clean_booking
 
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
     if style_match: meta['style'] = style_match.group(1).strip()
@@ -276,23 +414,24 @@ def extract_metadata(first_page_text):
 
     item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
     if item_match: 
-        item = item_match.group(1).strip()
-        if "Style" in item: item = item.split("Style")[0].strip()
-        meta['item'] = item
+        item_text = item_match.group(1).strip()
+        if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
+        meta['item'] = item_text
 
     return meta
 
 def extract_data_dynamic(file_path):
     extracted_data = []
-    metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
+    metadata = {
+        'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 
+        'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+    }
     order_no = "Unknown"
     
-    # 1. Metadata Extraction
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -305,78 +444,73 @@ def extract_data_dynamic(file_path):
         
         order_no = str(order_no).strip()
         if order_no.endswith("00"): order_no = order_no[:-2]
-        
-    except Exception as e: print(f"Meta error: {e}")
 
-    # 2. Table Extraction using pdfplumber (SMART FILTER)
-    try:
-        with pdfplumber.open(file_path) as pdf:
-            for page in pdf.pages:
-                tables = page.extract_tables()
+        for page in reader.pages:
+            text = page.extract_text()
+            lines = text.split('\n')
+            sizes = []
+            capturing_data = False
+            
+            for i, line in enumerate(lines):
+                line = line.strip()
+                if not line: continue
+
+                if ("Colo" in line or "Size" in line) and "Total" in line:
+                    parts = line.split()
+                    try:
+                        total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
+                        raw_sizes = parts[:total_idx]
+                        temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
+                        
+                        valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
+                        if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
+                            sizes = temp_sizes
+                            capturing_data = True
+                        else:
+                            sizes = []
+                            capturing_data = False
+                    except: pass
+                    continue
                 
-                for table in tables:
-                    header_row_idx = -1
-                    size_map = {} 
+                if capturing_data:
+                    if line.startswith("Total Quantity") or line.startswith("Total Amount"):
+                        capturing_data = False
+                        continue
                     
-                    # 1. Header Detection: Must find at least 2 valid sizes AND 'Total' column
-                    for i, row in enumerate(table):
-                        clean_row = [str(cell).strip() if cell else '' for cell in row]
-                        potential_sizes = [c for c in clean_row if is_potential_size(c)]
+                    lower_line = line.lower()
+                    if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
+                        continue
                         
-                        # Strict check for header
-                        if len(potential_sizes) >= 2 and "Total" in clean_row:
-                            header_row_idx = i
-                            for idx, cell in enumerate(clean_row):
-                                if is_potential_size(cell):
-                                    size_map[idx] = cell
-                            break
+                    clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
+                    if not re.search(r'[a-zA-Z]', clean_line): continue
+                    if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: continue
+
+                    numbers_in_line = re.findall(r'\b\d+\b', line)
+                    quantities = [int(n) for n in numbers_in_line]
+                    color_name = clean_line
+                    final_qtys = []
+
+                    if len(quantities) >= len(sizes):
+                        if len(quantities) == len(sizes) + 1: final_qtys = quantities[:-1] 
+                        else: final_qtys = quantities[:len(sizes)]
+                        color_name = re.sub(r'\s\d+$', '', color_name).strip()
+                    elif len(quantities) < len(sizes): 
+                        vertical_qtys = []
+                        for next_line in lines[i+1:]:
+                            next_line = next_line.strip()
+                            if "Total" in next_line or re.search(r'[a-zA-Z]', next_line.replace("Spec", "").replace("price", "")): break
+                            if re.match(r'^\d+$', next_line): vertical_qtys.append(int(next_line))
+                        if len(vertical_qtys) >= len(sizes): final_qtys = vertical_qtys[:len(sizes)]
                     
-                    if header_row_idx == -1: continue
-
-                    # 2. Data Row Processing
-                    for row in table[header_row_idx+1:]:
-                        clean_row = [str(cell).strip() if cell else '' for cell in row]
-                        if not clean_row or len(clean_row) < 2: continue
-                        
-                        first_cell = clean_row[0].replace('\n', ' ').strip()
-                        
-                        # == GARBAGE FILTERS (AS REQUESTED) ==
-                        if not first_cell: continue
-                        if first_cell.startswith("XX") or "CM" in first_cell: continue 
-                        if re.match(r'^\d+$', first_cell): continue 
-                        if "Total" in first_cell or "Grand Total" in first_cell: continue
-                        
-                        color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
-                        if not color_name: continue
-                        
-                        has_valid_qty = False
-                        row_data_temp = []
-                        
-                        for col_idx, size in size_map.items():
-                            if col_idx < len(clean_row):
-                                qty_str = clean_row[col_idx]
-                                qty_str = re.sub(r'[^\d]', '', qty_str)
-                                
-                                qty = 0
-                                if qty_str:
-                                    val = int(qty_str)
-                                    if val < 100000: qty = val
-                                
-                                # RECORD DATA (including 0 for empty cells)
-                                row_data_temp.append({
-                                    'P.O NO': order_no,
-                                    'Color': color_name,
-                                    'Size': size,
-                                    'Quantity': qty
-                                })
-                                
-                                if qty > 0: has_valid_qty = True
-                        
-                        if has_valid_qty:
-                            extracted_data.extend(row_data_temp)
-
-    except Exception as e: print(f"Table error: {e}")
-
+                    if final_qtys and color_name:
+                         for idx, size in enumerate(sizes):
+                            extracted_data.append({
+                                'P.O NO': order_no,
+                                'Color': color_name,
+                                'Size': size,
+                                'Quantity': final_qtys[idx]
+                            })
+    except Exception as e: print(f"Error processing file: {e}")
     return extracted_data, metadata
 
 # ==========================================
@@ -391,7 +525,10 @@ def index():
 
         uploaded_files = request.files.getlist('pdf_files')
         all_data = []
-        final_meta = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
+        final_meta = {
+            'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A',
+            'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'
+        }
         
         for file in uploaded_files:
             if file.filename == '': continue
@@ -400,8 +537,11 @@ def index():
             
             data, meta = extract_data_dynamic(file_path)
             
-            if meta['buyer'] != 'N/A': final_meta = meta
-            if data: all_data.extend(data)
+            if meta['buyer'] != 'N/A':
+                final_meta = meta
+            
+            if data:
+                all_data.extend(data)
         
         if not all_data:
             return render_template_string(RESULT_HTML, tables=None, message="No PO table data found.")
@@ -432,6 +572,7 @@ def index():
             qty_plus_3.name = '3% Order Qty'
             
             pivot = pd.concat([pivot, actual_qty.to_frame().T, qty_plus_3.to_frame().T])
+            
             pivot = pivot.reset_index()
             pivot = pivot.rename(columns={'index': 'P.O NO'})
             pivot.columns.name = None
@@ -439,17 +580,22 @@ def index():
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
+            # Injections
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
+            # Color Fix
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
 
             final_tables.append({'color': color, 'table': table_html})
             
-        return render_template_string(RESULT_HTML, tables=final_tables, meta=final_meta, grand_total=f"{grand_total_qty:,}")
+        return render_template_string(RESULT_HTML, 
+                                      tables=final_tables, 
+                                      meta=final_meta, 
+                                      grand_total=f"{grand_total_qty:,}")
 
     return render_template_string(INDEX_HTML)
 
