@@ -14,14 +14,23 @@ st.set_page_config(
 # --- Helper Functions ---
 
 def clean_number(value):
-    """Clean numeric values, return 0 if empty/invalid."""
+    """
+    Clean numeric values.
+    Returns 0 if empty, invalid, or unreasonably large (likely garbage text/barcodes).
+    """
     if value is None or value == "":
         return 0
     try:
-        clean_val = re.sub(r'[^\d]', '', str(value))
-        if not clean_val:
+        # শুধুমাত্র সংখ্যা রাখা
+        clean_str = re.sub(r'[^\d]', '', str(value))
+        
+        # Safety Check: যদি কোনো সংখ্যা ৯ ডিজিটের বেশি হয় (১০০,০০০,০০০ এর উপরে),
+        # তাহলে এটি সম্ভবত কোনো বারকোড বা ফোন নম্বর, কোয়ান্টিটি নয়।
+        # এটি OverflowError আটকাবে।
+        if not clean_str or len(clean_str) > 9:
             return 0
-        return int(clean_val)
+            
+        return int(clean_str)
     except ValueError:
         return 0
 
@@ -154,7 +163,14 @@ if uploaded_files:
                 st.subheader("Color & Order Summary")
                 # Dynamic Pivot
                 size_cols = [c for c in df.columns if c not in ['Order No', 'Color']]
+                
+                # Ensure all size columns are numeric to prevent Arrow errors
+                for col in size_cols:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+
                 pivot_df = df.pivot_table(index=['Color', 'Order No'], values=size_cols, aggfunc='sum', fill_value=0)
+                
+                # Display using container width (Fixed Warning syntax too)
                 st.dataframe(pivot_df, use_container_width=True)
                 
             with tab2:
