@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (BIG FONT & BOLD DESIGN)
 # ==========================================
 
 INDEX_HTML = """
@@ -218,17 +218,17 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (QUANTITY/PRICES TARGETED)
+#  LOGIC PART (CORRECTED TABLE EXTRACTION)
 # ==========================================
 
 def is_potential_size(header):
     h = header.strip().upper()
     if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO"]:
         return False
-    if re.match(r'^\d+$', h): return True
-    if re.match(r'^\d+\s*[AMYT]$', h): return True
+    # Regular patterns for sizes
+    if re.match(r'^\d+$', h): return True 
+    if re.match(r'^\d+\s*[AMYT]$', h): return True 
     if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
-    if re.match(r'^[A-Z]\d{2,}$', h): return False
     return False
 
 def sort_sizes(size_list):
@@ -240,9 +240,10 @@ def sort_sizes(size_list):
     ]
     def sort_key(s):
         s = s.strip()
-        if s in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s))
+        s_clean = s.replace(' ', '')
+        if s_clean in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s_clean))
         if s.isdigit(): return (1, int(s))
-        match = re.match(r'^(\d+)([A-Z]+)$', s)
+        match = re.match(r'^(\d+)\s*([A-Z]+)$', s)
         if match: return (2, int(match.group(1)), match.group(2))
         return (3, s)
     return sorted(size_list, key=sort_key)
@@ -286,12 +287,12 @@ def extract_data_dynamic(file_path):
     metadata = {'buyer': 'N/A', 'booking': 'N/A', 'style': 'N/A', 'season': 'N/A', 'dept': 'N/A', 'item': 'N/A'}
     order_no = "Unknown"
     
-    # 1. METADATA EXTRACTION (pypdf)
+    # 1. Metadata Extraction
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # Booking File Check: Extract meta, SKIP table
+        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -307,80 +308,72 @@ def extract_data_dynamic(file_path):
         
     except Exception as e: print(f"Meta error: {e}")
 
-    # 2. TABLE EXTRACTION (Target "Quantity/Prices" section)
+    # 2. Table Extraction using pdfplumber (SMART FILTER)
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
-                text = page.extract_text()
+                tables = page.extract_tables()
                 
-                # Check if "Quantity/Prices" exists on this page
-                if "Quantity/Prices" in text or "Quantity / Prices" in text or "Main purchase price" in text:
+                for table in tables:
+                    header_row_idx = -1
+                    size_map = {} 
                     
-                    # Extract tables from this specific page
-                    tables = page.extract_tables()
+                    # 1. Header Detection: Must find at least 2 valid sizes AND 'Total' column
+                    for i, row in enumerate(table):
+                        clean_row = [str(cell).strip() if cell else '' for cell in row]
+                        potential_sizes = [c for c in clean_row if is_potential_size(c)]
+                        
+                        # Strict check for header
+                        if len(potential_sizes) >= 2 and "Total" in clean_row:
+                            header_row_idx = i
+                            for idx, cell in enumerate(clean_row):
+                                if is_potential_size(cell):
+                                    size_map[idx] = cell
+                            break
                     
-                    for table in tables:
-                        header_row_idx = -1
-                        size_map = {} 
-                        
-                        # 1. HEADER DETECTION (Must have sizes)
-                        for i, row in enumerate(table):
-                            clean_row = [str(cell).strip() if cell else '' for cell in row]
-                            potential_sizes = [c for c in clean_row if is_potential_size(c)]
-                            
-                            # Valid header check
-                            if len(potential_sizes) >= 2:
-                                header_row_idx = i
-                                for idx, cell in enumerate(clean_row):
-                                    if is_potential_size(cell):
-                                        size_map[idx] = cell
-                                break
-                        
-                        if header_row_idx == -1: continue
+                    if header_row_idx == -1: continue
 
-                        # 2. DATA ROWS PROCESSING
-                        for row in table[header_row_idx+1:]:
-                            clean_row = [str(cell).strip() if cell else '' for cell in row]
-                            
-                            if not clean_row or len(clean_row) < 2: continue
-                            
-                            first_cell = clean_row[0].replace('\n', ' ').strip()
-                            
-                            # === STRICT FILTERS (The "Perfect Code" Logic) ===
-                            if not first_cell: continue
-                            if first_cell.startswith("XX"): continue 
-                            if "CM" in first_cell: continue 
-                            if re.match(r'^\d+$', first_cell): continue # If it's just a number
-                            if "Total" in first_cell or "Grand Total" in first_cell: continue
-                            
-                            color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
-                            if not color_name: continue
-                            
-                            has_valid_qty = False
-                            row_data_temp = []
-                            
-                            for col_idx, size in size_map.items():
-                                if col_idx < len(clean_row):
-                                    qty_str = clean_row[col_idx]
-                                    qty_str = re.sub(r'[^\d]', '', qty_str)
-                                    
-                                    qty = 0
-                                    if qty_str:
-                                        val = int(qty_str)
-                                        if val < 100000: qty = val
-                                    
-                                    # THIS IS THE KEY FIX: Store 0 for empty cells
-                                    row_data_temp.append({
-                                        'P.O NO': order_no,
-                                        'Color': color_name,
-                                        'Size': size,
-                                        'Quantity': qty
-                                    })
-                                    
-                                    if qty > 0: has_valid_qty = True
-                            
-                            if has_valid_qty:
-                                extracted_data.extend(row_data_temp)
+                    # 2. Data Row Processing
+                    for row in table[header_row_idx+1:]:
+                        clean_row = [str(cell).strip() if cell else '' for cell in row]
+                        if not clean_row or len(clean_row) < 2: continue
+                        
+                        first_cell = clean_row[0].replace('\n', ' ').strip()
+                        
+                        # == GARBAGE FILTERS (AS REQUESTED) ==
+                        if not first_cell: continue
+                        if first_cell.startswith("XX") or "CM" in first_cell: continue 
+                        if re.match(r'^\d+$', first_cell): continue 
+                        if "Total" in first_cell or "Grand Total" in first_cell: continue
+                        
+                        color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
+                        if not color_name: continue
+                        
+                        has_valid_qty = False
+                        row_data_temp = []
+                        
+                        for col_idx, size in size_map.items():
+                            if col_idx < len(clean_row):
+                                qty_str = clean_row[col_idx]
+                                qty_str = re.sub(r'[^\d]', '', qty_str)
+                                
+                                qty = 0
+                                if qty_str:
+                                    val = int(qty_str)
+                                    if val < 100000: qty = val
+                                
+                                # RECORD DATA (including 0 for empty cells)
+                                row_data_temp.append({
+                                    'P.O NO': order_no,
+                                    'Color': color_name,
+                                    'Size': size,
+                                    'Quantity': qty
+                                })
+                                
+                                if qty > 0: has_valid_qty = True
+                        
+                        if has_valid_qty:
+                            extracted_data.extend(row_data_temp)
 
     except Exception as e: print(f"Table error: {e}")
 
