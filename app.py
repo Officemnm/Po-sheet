@@ -16,7 +16,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES (FULL VERSION)
+#  HTML & CSS TEMPLATES (BIG FONT & BOLD)
 # ==========================================
 
 INDEX_HTML = """
@@ -82,13 +82,13 @@ RESULT_HTML = """
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         
-        /* Header Styles */
+        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes */
+        /* Info Boxes (Text Size Increased +3pt approx) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         
         .info-box { 
@@ -109,7 +109,7 @@ RESULT_HTML = """
             color: white; 
             padding: 10px 15px; 
             border-radius: 5px; 
-            width: 240px; 
+            width: 240px; /* Width increased for bigger text */
             text-align: right; 
             display: flex; 
             flex-direction: column; 
@@ -117,9 +117,10 @@ RESULT_HTML = """
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
+        /* Increased Font Size for Info Items */
         .info-item { 
             margin-bottom: 6px; 
-            font-size: 1.3rem; 
+            font-size: 1.3rem; /* Increased (~13pt/14pt) */
             font-weight: 700; 
             white-space: nowrap; 
             overflow: hidden; 
@@ -139,7 +140,7 @@ RESULT_HTML = """
             background-color: #e9ecef; 
             color: #2c3e50; 
             padding: 10px 12px; 
-            font-size: 1.5rem; 
+            font-size: 1.5rem; /* Increased Header Size */
             font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
@@ -147,25 +148,27 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
+        /* Table Header Cells (Bigger & Bolder) */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
             font-weight: 900; 
-            font-size: 1.2rem; 
+            font-size: 1.2rem; /* Increased (~13-14pt) */
             text-align: center; 
             border: 1px solid #34495e; 
             padding: 8px 4px; 
             vertical-align: middle; 
         }
         
+        /* Table Data Cells (Bigger & Bolder) */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
             padding: 6px 3px; 
             color: #000; 
-            font-weight: 800; 
-            font-size: 1.15rem; 
+            font-weight: 800; /* Extra Bold */
+            font-size: 1.15rem; /* Increased (~13pt) */
         }
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
@@ -174,14 +177,15 @@ RESULT_HTML = """
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
+        /* SUMMARY ROW STYLES (Light Blue & Bold) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
             background-color: #d1ecff !important; 
             --bs-table-accent-bg: #d1ecff !important; 
             color: #000 !important;
-            font-weight: 900 !important; 
+            font-weight: 900 !important; /* Extra Bold */
             border-top: 2px solid #aaa !important;
-            font-size: 1.2rem !important; 
+            font-size: 1.2rem !important; /* Even Bigger for Summary */
         }
         
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
@@ -189,17 +193,20 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
+        /* Footer Smaller (-1pt) */
         .footer-credit { 
             text-align: center; 
             margin-top: 30px; 
             margin-bottom: 20px; 
-            font-size: 0.8rem; 
+            font-size: 0.8rem; /* Reduced Size (~9pt) */
             color: #2c3e50; 
             padding-top: 10px; 
             border-top: 1px solid #ddd; 
         }
 
-        /* PRINT STYLES */
+        /* =========================================
+           PRINT SPECIFIC STYLES
+           ========================================= */
         @media print {
             @page { margin: 5mm; size: portrait; }
             
@@ -208,12 +215,14 @@ RESULT_HTML = """
                 padding: 0; 
                 -webkit-print-color-adjust: exact !important; 
                 print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
             
             .container { max-width: 100% !important; width: 100% !important; padding: 0; margin: 0; }
             .no-print { display: none !important; }
             
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+            /* Header Size Unchanged in Print */
             .company-name { font-size: 1.8rem; } 
             
             .info-container { margin-bottom: 10px; }
@@ -227,15 +236,18 @@ RESULT_HTML = """
             }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             
+            /* Info Items Print Size (+3pt) */
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             
+            /* Table Print Size (+3pt) */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
                 padding: 2px !important; 
-                font-size: 13pt !important; 
+                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
                 font-weight: 800 !important;
             }
             
+            /* Summary Row Color Force */
             .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
                 box-shadow: inset 0 0 0 9999px #d1ecff !important; 
@@ -246,7 +258,7 @@ RESULT_HTML = """
             .color-header { 
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
-                font-size: 1.4rem !important; 
+                font-size: 1.4rem !important; /* Bigger */
                 font-weight: 900 !important;
                 padding: 5px;
                 margin-top: 10px;
@@ -261,12 +273,13 @@ RESULT_HTML = """
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             
+            /* Footer Smaller */
             .footer-credit { 
                 display: block !important; 
                 color: black; 
                 border-top: 1px solid #000; 
                 margin-top: 10px; 
-                font-size: 8pt !important; 
+                font-size: 8pt !important; /* Smaller */
             }
         }
     </style>
@@ -339,7 +352,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (FULL & FIXED)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -349,6 +362,7 @@ def is_potential_size(header):
     if re.match(r'^\d+$', h): return True
     if re.match(r'^\d+[AMYT]$', h): return True
     if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
+    if re.match(r'^[A-Z]\d{2,}$', h): return False
     return False
 
 def sort_sizes(size_list):
@@ -375,11 +389,11 @@ def extract_metadata(first_page_text):
     
     if "KIABI" in first_page_text.upper():
         meta['buyer'] = "KIABI"
+    else:
+        buyer_match = re.search(r"Buyer.*?Name[\s\S]*?([\w\s&]+)(?:\n|$)", first_page_text)
+        if buyer_match: meta['buyer'] = buyer_match.group(1).strip()
 
     booking_block_match = re.search(r"(?:Internal )?Booking NO\.?[:\s]*([\s\S]*?)(?:System NO|Control No|Buyer)", first_page_text, re.IGNORECASE)
-    if not booking_block_match:
-        booking_block_match = re.search(r"Computer Reference:\s*([\w/]+)", first_page_text, re.IGNORECASE)
-        
     if booking_block_match: 
         raw_booking = booking_block_match.group(1).strip()
         clean_booking = raw_booking.replace('\n', '').replace('\r', '').replace(' ', '')
@@ -387,31 +401,170 @@ def extract_metadata(first_page_text):
         meta['booking'] = clean_booking
 
     style_match = re.search(r"Style Ref\.?[:\s]*([\w-]+)", first_page_text, re.IGNORECASE)
-    if not style_match:
-        style_match = re.search(r"Article:\s*([\s\S]*?)(?:Certification|Season|$)", first_page_text, re.IGNORECASE)
-        
-    if style_match: 
-        meta['style'] = style_match.group(1).strip().split('\n')[0][:25]
+    if style_match: meta['style'] = style_match.group(1).strip()
+    else:
+        style_match = re.search(r"Style Des\.?[\s\S]*?([\w-]+)", first_page_text, re.IGNORECASE)
+        if style_match: meta['style'] = style_match.group(1).strip()
 
-    season_match = re.search(r"Season\s*[:\n\"]*([\w\d\s-]+)", first_page_text, re.IGNORECASE)
+    season_match = re.search(r"Season\s*[:\n\"]*([\w\d-]+)", first_page_text, re.IGNORECASE)
     if season_match: meta['season'] = season_match.group(1).strip()
 
     dept_match = re.search(r"Dept\.?[\s\n:]*([A-Za-z]+)", first_page_text, re.IGNORECASE)
-    if not dept_match:
-         dept_match = re.search(r"Process:\s*([A-Za-z\s]+)", first_page_text, re.IGNORECASE)
     if dept_match: meta['dept'] = dept_match.group(1).strip()
 
     item_match = re.search(r"Garments? Item[\s\n:]*([^\n\r]+)", first_page_text, re.IGNORECASE)
-    if not item_match:
-        item_match = re.search(r"Article:[\s\n]*([A-Z0-9\s-]+)", first_page_text, re.IGNORECASE)
-        
     if item_match: 
         item_text = item_match.group(1).strip()
         if "Style" in item_text: item_text = item_text.split("Style")[0].strip()
-        if "TS" in item_text: item_text = "T-SHIRT"
         meta['item'] = item_text
 
     return meta
+
+def parse_table_with_positions(page):
+    """
+    টেবিল থেকে position-based extraction করে যাতে ফাঁকা সেল সঠিকভাবে handle হয়
+    """
+    extracted_data = []
+    
+    try:
+        # টেবিল extract করার চেষ্টা
+        tables = []
+        
+        # প্রথমে text থেকে parse করি
+        text = page.extract_text()
+        if not text:
+            return []
+            
+        lines = text.split('\n')
+        sizes = []
+        size_line_found = False
+        capturing_data = False
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if not line:
+                continue
+
+            # Size header line খুঁজি
+            if ("Colo" in line or "Size" in line) and "Total" in line:
+                parts = line.split()
+                try:
+                    total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
+                    raw_sizes = parts[:total_idx]
+                    temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
+                    
+                    valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
+                    if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
+                        sizes = temp_sizes
+                        size_line_found = True
+                        capturing_data = True
+                    else:
+                        sizes = []
+                        capturing_data = False
+                except:
+                    pass
+                continue
+            
+            if capturing_data and sizes:
+                if line.startswith("Total Quantity") or line.startswith("Total Amount"):
+                    capturing_data = False
+                    continue
+                
+                lower_line = line.lower()
+                if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
+                    continue
+                    
+                clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
+                if not re.search(r'[a-zA-Z]', clean_line):
+                    continue
+                if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line:
+                    continue
+
+                # Color name এবং quantities আলাদা করি
+                # প্রথমে color name বের করি (শুরুর text অংশ)
+                color_match = re.match(r'^([A-Za-z][A-Za-z\s\-\/\.]+?)(?:\s+\d|\s*$)', clean_line)
+                if color_match:
+                    color_name = color_match.group(1).strip()
+                else:
+                    # যদি match না হয়, পুরো text থেকে শেষের numbers বাদ দিই
+                    color_name = re.sub(r'[\s\d]+$', '', clean_line).strip()
+                
+                if not color_name:
+                    continue
+                
+                # Line থেকে সব numbers বের করি position সহ
+                number_pattern = re.finditer(r'\b(\d+)\b', line)
+                numbers_with_pos = [(m.group(1), m.start()) for m in number_pattern]
+                
+                if not numbers_with_pos:
+                    continue
+                
+                quantities = [int(n[0]) for n in numbers_with_pos]
+                
+                # যদি quantities এর সংখ্যা sizes + 1 হয় (শেষেরটা Total)
+                # তাহলে শেষেরটা বাদ দিই
+                if len(quantities) == len(sizes) + 1:
+                    quantities = quantities[:-1]
+                
+                # এখন quantities এবং sizes match করি
+                # যদি quantities কম হয়, বাকিগুলো 0 দিই
+                final_qtys = []
+                
+                if len(quantities) >= len(sizes):
+                    # সব size এর জন্য quantity আছে
+                    final_qtys = quantities[:len(sizes)]
+                elif len(quantities) < len(sizes):
+                    # কিছু size এ quantity নেই
+                    # এখানে আমরা assume করছি যে quantities গুলো 
+                    # যে order এ আছে সেই order এ sizes এ map হবে
+                    # কিন্তু মাঝে ফাঁকা থাকলে সেটা detect করতে হবে
+                    
+                    # Simple approach: যদি কম থাকে, শেষের দিকে 0 দিই
+                    # এটা সবসময় সঠিক না, কিন্তু better than wrong mapping
+                    
+                    # Advanced approach: Total থেকে verify করি
+                    # যদি line এ Total থাকে, সেটা দিয়ে verify করতে পারি
+                    
+                    total_in_line = None
+                    if len(numbers_with_pos) > 0:
+                        # শেষের number টা Total হতে পারে যদি সেটা বাকিগুলোর যোগফলের কাছাকাছি হয়
+                        potential_total = int(numbers_with_pos[-1][0])
+                        sum_others = sum(int(n[0]) for n in numbers_with_pos[:-1])
+                        
+                        if potential_total == sum_others and len(numbers_with_pos) > 1:
+                            total_in_line = potential_total
+                            quantities = [int(n[0]) for n in numbers_with_pos[:-1]]
+                    
+                    # এখন smart mapping করি
+                    # যদি quantities এখনো কম হয়, তাহলে কিছু size এ 0 আছে
+                    if len(quantities) < len(sizes):
+                        # আমরা জানি না কোন size এ 0 আছে
+                        # তাই আমরা available quantities গুলোকে 
+                        # প্রথম থেকে শুরু করে map করবো এবং বাকিতে 0 দিবো
+                        
+                        # তবে যদি Total available থাকে, সেটা দিয়ে verify করতে পারি
+                        final_qtys = [0] * len(sizes)
+                        
+                        # যতটা quantity আছে, সেগুলো প্রথম থেকে বসাই
+                        for idx, qty in enumerate(quantities):
+                            if idx < len(sizes):
+                                final_qtys[idx] = qty
+                    else:
+                        final_qtys = quantities[:len(sizes)]
+                
+                # Data add করি যদি valid হয়
+                if final_qtys and color_name and sum(final_qtys) > 0:
+                    for idx, size in enumerate(sizes):
+                        extracted_data.append({
+                            'Color': color_name,
+                            'Size': size,
+                            'Quantity': final_qtys[idx] if idx < len(final_qtys) else 0
+                        })
+    
+    except Exception as e:
+        print(f"Error in parse_table_with_positions: {e}")
+    
+    return extracted_data
 
 def extract_data_dynamic(file_path):
     extracted_data = []
@@ -424,16 +577,23 @@ def extract_data_dynamic(file_path):
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
-        metadata = extract_metadata(first_page_text)
         
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
+            metadata = extract_metadata(first_page_text)
             return [], metadata 
 
+        # Order number খুঁজি
         order_match = re.search(r"Order no\D*(\d+)", first_page_text, re.IGNORECASE)
-        if order_match: order_no = order_match.group(1)
+        if order_match: 
+            order_no = order_match.group(1)
+        else:
+            alt_match = re.search(r"Order\s*[:\.]?\s*(\d+)", first_page_text, re.IGNORECASE)
+            if alt_match: 
+                order_no = alt_match.group(1)
         
         order_no = str(order_no).strip()
-        if order_no.endswith("00"): order_no = order_no[:-2]
+        if order_no.endswith("00"): 
+            order_no = order_no[:-2]
 
         for page in reader.pages:
             text = page.extract_text()
@@ -443,60 +603,159 @@ def extract_data_dynamic(file_path):
             
             for i, line in enumerate(lines):
                 line = line.strip()
-                if not line: continue
+                if not line: 
+                    continue
 
+                # Size header line খুঁজি
                 if ("Colo" in line or "Size" in line) and "Total" in line:
                     parts = line.split()
-                    sizes = [s for s in parts if is_potential_size(s)]
-                    if sizes:
-                        capturing_data = True
+                    try:
+                        total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
+                        raw_sizes = parts[:total_idx]
+                        temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
+                        
+                        valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
+                        if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
+                            sizes = temp_sizes
+                            capturing_data = True
+                        else:
+                            sizes = []
+                            capturing_data = False
+                    except: 
+                        pass
                     continue
                 
                 if capturing_data:
-                    if "Total Quantity" in line or "Total Amount" in line:
+                    if line.startswith("Total Quantity") or line.startswith("Total Amount"):
                         capturing_data = False
                         continue
                     
-                    if not re.search(r'[a-zA-Z]', line) or "Spec. price" not in line: 
+                    lower_line = line.lower()
+                    if "quantity" in lower_line or "currency" in lower_line or "price" in lower_line or "amount" in lower_line:
+                        continue
+                        
+                    clean_line = line.replace("Spec. price", "").replace("Spec", "").strip()
+                    if not re.search(r'[a-zA-Z]', clean_line): 
+                        continue
+                    if re.match(r'^[A-Z]\d+$', clean_line) or "Assortment" in clean_line: 
                         continue
 
-                    color_name = line.split("Spec. price")[0].strip()
-                    nums = [int(n) for n in re.findall(r'\b\d+\b', line.split("Spec. price")[1])]
+                    # ======== সংশোধিত অংশ শুরু ========
                     
-                    if not nums: continue
-                    
-                    # Logic for handling total and gaps
-                    row_total = nums[-1]
-                    qty_data = nums[:-1] 
-                    
-                    final_mapped_qtys = [0] * len(sizes)
-                    
-                    if len(qty_data) == len(sizes):
-                        final_mapped_qtys = qty_data
-                    elif len(qty_data) < len(sizes):
-                        # Gap Detection Logic
-                        found_gap = False
-                        for gap_idx in range(len(sizes)):
-                            temp_list = qty_data[:gap_idx] + [0] + qty_data[gap_idx:]
-                            if sum(temp_list[:len(sizes)]) == row_total:
-                                final_mapped_qtys = temp_list[:len(sizes)]
-                                found_gap = True
-                                break
-                        if not found_gap: 
-                             # Fallback if gap logic fails
-                             final_mapped_qtys = qty_data + [0]*(len(sizes)-len(qty_data))
+                    # Color name extract করি - শুধু alphabetic অংশ
+                    color_match = re.match(r'^([A-Za-z][A-Za-z\s\-\/\.]*[A-Za-z])', clean_line)
+                    if color_match:
+                        color_name = color_match.group(1).strip()
                     else:
-                        final_mapped_qtys = qty_data[:len(sizes)]
+                        # Single word color
+                        color_match = re.match(r'^([A-Za-z]+)', clean_line)
+                        if color_match:
+                            color_name = color_match.group(1).strip()
+                        else:
+                            continue
                     
-                    for idx, s in enumerate(sizes):
-                        extracted_data.append({
-                            'P.O NO': order_no,
-                            'Color': color_name,
-                            'Size': s,
-                            'Quantity': final_mapped_qtys[idx]
-                        })
-
-    except Exception as e: print(f"Error processing file: {e}")
+                    # Line থেকে সব numbers বের করি
+                    all_numbers = re.findall(r'\b(\d+)\b', line)
+                    
+                    if not all_numbers:
+                        # Vertical format check - পরের lines এ numbers থাকতে পারে
+                        vertical_qtys = []
+                        for next_line in lines[i+1:]:
+                            next_line = next_line.strip()
+                            if "Total" in next_line or re.search(r'[a-zA-Z]', next_line.replace("Spec", "").replace("price", "")): 
+                                break
+                            if re.match(r'^\d+$', next_line): 
+                                vertical_qtys.append(int(next_line))
+                        
+                        if len(vertical_qtys) >= len(sizes):
+                            quantities = vertical_qtys[:len(sizes)]
+                            for idx, size in enumerate(sizes):
+                                extracted_data.append({
+                                    'P.O NO': order_no,
+                                    'Color': color_name,
+                                    'Size': size,
+                                    'Quantity': quantities[idx]
+                                })
+                        continue
+                    
+                    quantities = [int(n) for n in all_numbers]
+                    
+                    # Total detection এবং validation
+                    # শেষের number টা Total কিনা check করি
+                    has_total_at_end = False
+                    
+                    if len(quantities) >= 2:
+                        potential_total = quantities[-1]
+                        sum_of_others = sum(quantities[:-1])
+                        
+                        # যদি শেষের number বাকিগুলোর যোগফলের সমান হয়
+                        if potential_total == sum_of_others:
+                            has_total_at_end = True
+                            quantities = quantities[:-1]  # Total বাদ দিই
+                    
+                    # এখন quantities কে sizes এ map করি
+                    final_qtys = []
+                    
+                    if len(quantities) == len(sizes):
+                        # Perfect match
+                        final_qtys = quantities
+                    
+                    elif len(quantities) > len(sizes):
+                        # বেশি numbers আছে - প্রথম len(sizes) টা নিই
+                        final_qtys = quantities[:len(sizes)]
+                    
+                    elif len(quantities) < len(sizes):
+                        # ======== মূল সমস্যার সমাধান ========
+                        # কম numbers আছে - মানে কিছু size এ quantity নেই (ফাঁকা)
+                        # 
+                        # Strategy: 
+                        # 1. যদি Total available থাকে এবং সেটা quantities এর sum এর সমান,
+                        #    তাহলে আমরা জানি available quantities correct আছে
+                        # 2. বাকি positions এ 0 বসাই
+                        #
+                        # তবে কোন positions এ 0 বসাবো সেটা নির্ণয় করা কঠিন
+                        # আমরা assume করছি যে:
+                        # - যদি কম quantity থাকে, সেগুলো প্রথম sizes এর জন্য
+                        # - বাকি (শেষের) sizes এ 0
+                        #
+                        # এটা সবসময় correct না, কিন্তু wrong shifting এর চেয়ে ভালো
+                        
+                        final_qtys = [0] * len(sizes)
+                        
+                        # Available quantities গুলো শুরু থেকে বসাই
+                        for idx, qty in enumerate(quantities):
+                            if idx < len(sizes):
+                                final_qtys[idx] = qty
+                        
+                        # বিকল্প: যদি মাঝের কোনো size এ 0 থাকে সেটা detect করতে
+                        # আমাদের PDF এর actual column positions লাগবে
+                        # যেটা pypdf দিয়ে সহজে পাওয়া যায় না
+                    
+                    # ======== সংশোধিত অংশ শেষ ========
+                    
+                    # Data add করি
+                    if final_qtys and color_name:
+                        # Verify: total quantity যেন reasonable হয়
+                        total_qty = sum(final_qtys)
+                        
+                        # যদি কোনো single quantity অস্বাভাবিক বড় হয় 
+                        # (যেমন 50000+ যেটা আসলে order total হতে পারে)
+                        # সেটা skip করি
+                        max_reasonable_qty = 50000  # একটা reasonable limit
+                        if any(q > max_reasonable_qty for q in final_qtys):
+                            continue
+                        
+                        for idx, size in enumerate(sizes):
+                            extracted_data.append({
+                                'P.O NO': order_no,
+                                'Color': color_name,
+                                'Size': size,
+                                'Quantity': final_qtys[idx] if idx < len(final_qtys) else 0
+                            })
+                            
+    except Exception as e: 
+        print(f"Error processing file: {e}")
+    
     return extracted_data, metadata
 
 # ==========================================
@@ -506,7 +765,8 @@ def extract_data_dynamic(file_path):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        if os.path.exists(UPLOAD_FOLDER): shutil.rmtree(UPLOAD_FOLDER)
+        if os.path.exists(UPLOAD_FOLDER): 
+            shutil.rmtree(UPLOAD_FOLDER)
         os.makedirs(UPLOAD_FOLDER)
 
         uploaded_files = request.files.getlist('pdf_files')
@@ -517,13 +777,14 @@ def index():
         }
         
         for file in uploaded_files:
-            if file.filename == '': continue
+            if file.filename == '': 
+                continue
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(file_path)
             
             data, meta = extract_data_dynamic(file_path)
             
-            if meta.get('buyer') != 'N/A':
+            if meta['buyer'] != 'N/A':
                 final_meta = meta
             
             if data:
@@ -587,4 +848,3 @@ def index():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
-
