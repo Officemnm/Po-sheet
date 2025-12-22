@@ -413,7 +413,7 @@ def extract_data_dynamic(file_path):
     }
     order_no = "Unknown"
     
-    # 1. Metadata Extraction using pypdf (Fast & Reliable for text)
+    # 1. Metadata Extraction using pypdf
     try:
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
@@ -434,25 +434,20 @@ def extract_data_dynamic(file_path):
     except Exception as e:
         print(f"Metadata error: {e}")
 
-    # 2. Table Extraction using pdfplumber (Reliable for empty cells)
+    # 2. Table Extraction using pdfplumber
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
                 tables = page.extract_tables()
                 
                 for table in tables:
-                    # Identify Header Row
                     header_row_idx = -1
-                    size_map = {} # {col_index: size_name}
+                    size_map = {} 
                     
                     for i, row in enumerate(table):
-                        # Handle None cells
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
-                        
-                        # Check if this row is a header (contains sizes)
                         potential_sizes = [c for c in clean_row if is_potential_size(c)]
                         
-                        # Heuristic: If row has > 3 size-like items, it's a header
                         if len(potential_sizes) > 3:
                             header_row_idx = i
                             for idx, cell in enumerate(clean_row):
@@ -461,31 +456,29 @@ def extract_data_dynamic(file_path):
                             break
                     
                     if header_row_idx != -1:
-                        # Process Data Rows
                         for row in table[header_row_idx+1:]:
                             clean_row = [str(cell).strip() if cell else '' for cell in row]
                             
-                            # Valid data row check
                             if not clean_row or len(clean_row) < 2: continue
                             
                             color_name = clean_row[0].replace('\n', ' ').strip()
-                            # Clean garbage from color name
                             color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', color_name, flags=re.IGNORECASE).strip()
                             
                             if not color_name or "Total" in color_name or "Grand Total" in color_name:
                                 continue
                             
-                            # Extract Qty
                             for col_idx, size in size_map.items():
                                 if col_idx < len(clean_row):
                                     qty_str = clean_row[col_idx]
-                                    # Remove non-digits (spaces in numbers like 1 000)
                                     qty_str = re.sub(r'[^\d]', '', qty_str)
                                     
                                     qty = int(qty_str) if qty_str else 0
                                     
-                                    # Add data (including 0s if you want, but mainly >0)
-                                    # If you want to show 0 for missing cells in pivot, we add everything
+                                    # === SANITY CHECK (CRITICAL FIX) ===
+                                    # যদি ১ লাখের বেশি হয়, তবে ধরে নেওয়া হবে এটি ভুল ডাটা (Date/Phone/Barcode)
+                                    if qty > 100000:
+                                        qty = 0
+                                    
                                     if qty >= 0: 
                                         extracted_data.append({
                                             'P.O NO': order_no,
@@ -566,12 +559,10 @@ def index():
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # Injections
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
-            # Color Fix
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
