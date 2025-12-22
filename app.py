@@ -2,229 +2,170 @@ import streamlit as st
 import pdfplumber
 import pandas as pd
 import re
-import io
+from io import BytesIO
 
-# --- Page Configuration ---
-st.set_page_config(
-    page_title="PDF Order Extractor",
-    page_icon="📄",
-    layout="wide"
-)
+# পেজ সেটআপ
+st.set_page_config(page_title="PO Report Generator", layout="centered")
+st.title("📄 Purchase Order Report Generator")
+st.write("ফাইল আপলোড করুন এবং ম্যাজিক দেখুন।")
 
-# --- Helper Functions ---
+# ফাইল আপলোডার
+uploaded_files = st.file_uploader("পিডিএফ ফাইলগুলো এখানে দিন", type="pdf", accept_multiple_files=True)
 
-def clean_number(value):
-    """
-    Clean numeric values with STRICT limits.
-    Returns 0 if empty, invalid, or unreasonably large.
-    """
-    if value is None or value == "":
-        return 0
+def parse_cotton_club_pdf(file):
+    extracted_rows = []
     try:
-        # শুধুমাত্র সংখ্যা রাখা
-        clean_str = re.sub(r'[^\d]', '', str(value))
-        
-        # STRICT SAFETY CHECK:
-        # 1. যদি ফাঁকা হয় -> 0
-        # 2. যদি ৬ ডিজিটের বেশি হয় (মানে ৯,৯৯,৯৯৯ এর বেশি) -> 0 (বারকোড/ভুল ডাটা এড়াতে)
-        if not clean_str or len(clean_str) > 6:
-            return 0
+        with pdfplumber.open(file) as pdf:
+            # ১. অর্ডার নম্বর বের করা (পেজ ১ থেকে)
+            first_page_text = pdf.pages[0].extract_text() or ""
+            order_match = re.search(r'Order no[:\s]+(\d+)', first_page_text, re.IGNORECASE)
             
-        val = int(clean_str)
-        # অতিরিক্ত সেফটি: ১০,০০০ এর বেশি কোয়ান্টিটি এক সাইজে অস্বাভাবিক, 
-        # তবুও যদি বড় অর্ডার হয় তাই লিমিট ১,০০,০০০ রাখা হলো। এর বেশি হলে বাদ।
-        if val > 100000: 
-            return 0
-            
-        return val
-    except ValueError:
-        return 0
+            short_order_no = "Unknown"
+            if order_match:
+                full_order = order_match.group(1)
+                # শেষের ২ ডিজিট বাদ দেওয়া (যেমন: 17379900 -> 173799)
+                short_order_no = full_order[:-2] if len(full_order) > 2 else full_order
 
-def clean_color_name(text):
-    """Clean color name string."""
-    if not text:
-        return ""
-    text = str(text).replace('\n', ' ')
-    # অপ্রয়োজনীয় শব্দ বাদ দেওয়া
-    text = text.replace("Spec. price", "").replace("Total Quantity", "").replace("Main purchase price", "")
-    # স্পেশাল ক্যারেক্টার ক্লিন করা (শুধুমাত্র অক্ষর, সংখ্যা, হাইফেন ও স্পেস রাখা)
-    text = re.sub(r'[^\w\s-]', '', text) 
-    return re.sub(' +', ' ', text).strip()
-
-def process_pdf_file(uploaded_file):
-    """Process a single uploaded PDF file object."""
-    extracted_data = []
-    order_no = "Unknown"
-    
-    try:
-        with pdfplumber.open(uploaded_file) as pdf:
-            # 1. Extract Order No (Page 1)
-            if len(pdf.pages) > 0:
-                p1_text = pdf.pages[0].extract_text() or ""
-                # Order no প্যাটার্ন খোঁজা
-                order_match = re.search(r'Order no[:\s]+(\d+)', p1_text, re.IGNORECASE)
-                if order_match:
-                    order_no = order_match.group(1)
-
-            # 2. Extract Tables (All Pages)
+            # ২. টেবিল খোঁজা
             for page in pdf.pages:
                 tables = page.extract_tables()
-                
                 for table in tables:
-                    if not table: continue
+                    # টেবিল ক্লিন করা
+                    clean_table = [[str(cell).replace("\n", " ").strip() if cell else "" for cell in row] for row in table]
                     
-                    # Find Header Row
-                    header_row_index = -1
-                    size_columns = []
+                    # --- লজিক: সাইজ হেডার খোঁজা ---
+                    size_map = {} # {Column Index: Size Name}
+                    header_found = False
+                    start_row_index = -1
                     
-                    for i, row in enumerate(table):
-                        # None ভ্যালু হ্যান্ডেল করা
-                        row_text = [str(x) if x else "" for x in row]
+                    # আমরা খুঁজব এমন রো যেখানে সাইজ আছে (S, M, 3A, 4A ইত্যাদি)
+                    for r_idx, row in enumerate(clean_table):
+                        # রো-এর ভ্যালুগুলো চেক করি
+                        for c_idx, cell in enumerate(row):
+                            # কমন সাইজগুলো খুঁজব (লিস্ট আরও বড় করা যেতে পারে)
+                            # স্পেস রিমুভ করে চেক করা ভালো
+                            clean_cell = cell.replace(" ", "")
+                            if clean_cell in ["3A", "4A", "5A", "6A", "8A", "10A", "12A", "S", "M", "L", "XL", "XXL", "3XL", "3M", "6M", "9M", "12M", "18M", "2A"]:
+                                size_map[c_idx] = clean_cell
                         
-                        # কলাম হেডার ডিটেকশন (Colo বা Size শব্দ খুঁজবে)
-                        if any("Colo" in col or "Size" in col for col in row_text):
-                            header_row_index = i
-                            for col_idx, col_name in enumerate(row_text):
-                                c_name = col_name.replace('\n', ' ').strip()
-                                # হেডার থেকে অপ্রয়োজনীয় কলাম বাদ দেওয়া
-                                if c_name and "Colo" not in c_name and "Total" not in c_name and "Spec" not in c_name:
-                                    size_columns.append({'index': col_idx, 'name': c_name})
+                        # যদি অন্তত ২টা সাইজ পাওয়া যায়, তাহলে এটাই হেডার রো
+                        if len(size_map) >= 2:
+                            header_found = True
+                            start_row_index = r_idx
                             break
                     
-                    if header_row_index == -1 or not size_columns:
-                        continue
-
-                    # Process Rows
-                    current_color = None
-                    
-                    for i in range(header_row_index + 1, len(table)):
-                        row = table[i]
-                        first_col = row[0] if row[0] else ""
-                        
-                        # --- STRICT FILTERING (গারবেজ ডাটা আটকানোর জন্য) ---
-                        
-                        # ১. পুরো রো-এর সব টেক্সট চেক করা
-                        row_full_text = " ".join([str(x).lower() for x in row if x])
-                        
-                        # ২. যদি রো-তে Total, Amount, Price, Assortment থাকে -> SKIP
-                        if any(bad_word in row_full_text for bad_word in ['total', 'amount', 'assortment', 'main purchase', 'currency']):
-                            # এখানে current_color রিসেট করা ভালো, যাতে পরের লাইনে ভুল করে আগের কালার না ধরে
-                            current_color = None 
-                            continue
-                        
-                        temp_color = clean_color_name(first_col)
-                        
-                        # ৩. কালার ডিটেকশন লজিক
-                        # যদি টেক্সট থাকে এবং সেটি সংখ্যা না হয়
-                        if temp_color and not any(char.isdigit() for char in temp_color):
-                            current_color = temp_color
-                        elif not temp_color and current_color:
-                            # যদি কালার সেল ফাঁকা থাকে, আমরা আগের কালার ধরব কি না?
-                            # সাধারণত কোয়ান্টিটি টেবিলের মাঝখানে ফাঁকা রো থাকে না।
-                            # তাই যদি কোনো সংখ্যা না পাওয়া যায়, তবে স্কিপ করা ভালো।
-                            pass
-                        elif not temp_color and not current_color:
-                            # কালারও নেই, আগের কালারও নেই -> স্কিপ
-                            continue
-
-                        # ডাটা এক্সট্রাকশন
-                        row_has_data = False
-                        row_data = {'Order No': order_no, 'Color': current_color}
-                        
-                        qty_found_count = 0
-                        for col_info in size_columns:
-                            idx = col_info['index']
-                            if idx < len(row):
-                                val = clean_number(row[idx])
-                                if val > 0:
-                                    row_has_data = True
-                                    qty_found_count += 1
-                                row_data[col_info['name']] = val
-                            else:
-                                row_data[col_info['name']] = 0
-                        
-                        # ডাটা অ্যাড করা (যদি ভ্যালিড কালার থাকে এবং অন্তত একটি সাইজের ভ্যালিড কোয়ান্টিটি থাকে)
-                        if row_has_data and current_color:
-                             extracted_data.append(row_data)
+                    # যদি হেডার পাওয়া যায়, তবে ডাটা খুঁজব
+                    if header_found:
+                        for i in range(start_row_index + 1, len(clean_table)):
+                            row = clean_table[i]
+                            if not row: continue
+                            
+                            first_cell = row[0]
+                            
+                            # কালার চেনার উপায়:
+                            # ১. টেক্সট হতে হবে
+                            # ২. "Total" বা "Spec" শব্দ থাকবে না
+                            # ৩. সাধারণত ২ অক্ষরের বেশি হয়
+                            is_color_row = False
+                            
+                            # অনাকাঙ্ক্ষিত রো বাদ দেওয়া
+                            bad_keywords = ["Total", "Spec", "Page", "Quantity", "Amount", "Price", "Currency"]
+                            if len(first_cell) > 2 and not any(x in first_cell for x in bad_keywords):
+                                # কালার রো সাধারণত সংখ্যা দিয়ে শুরু হয় না
+                                if not any(char.isdigit() for char in first_cell):
+                                    is_color_row = True
+                            
+                            if is_color_row:
+                                row_data = {
+                                    "Color": first_cell,
+                                    "Order No": short_order_no
+                                }
+                                
+                                total_qty = 0
+                                # ম্যাপ করা কলাম থেকে কোয়ান্টিটি নেওয়া
+                                for col_idx, size_name in size_map.items():
+                                    if col_idx < len(row):
+                                        try:
+                                            # কমা বা স্পেস থাকলে সরিয়ে ফেলা
+                                            val = str(row[col_idx]).replace(",", "").replace(" ", "").replace(".", "")
+                                            # যদি ভ্যালু থাকে এবং সংখ্যা হয়
+                                            if val.isdigit():
+                                                qty = int(val)
+                                                # সেফটি চেক: ১ লক্ষের বেশি হলে বাদ (গারবেজ)
+                                                if qty > 100000: qty = 0
+                                            else:
+                                                qty = 0
+                                        except:
+                                            qty = 0
+                                    else:
+                                        qty = 0
+                                    
+                                    row_data[size_name] = qty
+                                    total_qty += qty
+                                
+                                # ম্যানুয়ালি টোটাল বসাচ্ছি
+                                row_data["Total"] = total_qty
+                                
+                                # শুধু যদি কোয়ান্টিটি থাকে তবেই এড করব
+                                if total_qty > 0:
+                                    extracted_rows.append(row_data)
 
     except Exception as e:
-        st.error(f"Error processing file: {e}")
+        st.error(f"Error in {file.name}: {e}")
         
-    return extracted_data
-
-# --- Main App Layout ---
-
-st.title("📊 Professional PDF Order Extractor")
-st.markdown("""
-<style>
-div.stButton > button:first-child {
-    background-color: #0099ff;
-    color: white;
-    font-size: 20px;
-    border-radius: 10px;
-    padding: 10px 24px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.info("Please upload your Purchase Order PDFs below. The app will extract quantities by Size and Color.")
-
-# File Uploader
-uploaded_files = st.file_uploader("Upload PDF Files", type="pdf", accept_multiple_files=True)
+    return extracted_rows
 
 if uploaded_files:
-    if st.button("🚀 Process Files & Generate Report"):
-        all_records = []
+    if st.button("Generate Report Now"):
+        all_data = []
         progress_bar = st.progress(0)
         
-        for idx, file in enumerate(uploaded_files):
-            # Process each file
-            data = process_pdf_file(file)
-            all_records.extend(data)
+        for idx, f in enumerate(uploaded_files):
+            all_data.extend(parse_cotton_club_pdf(f))
             progress_bar.progress((idx + 1) / len(uploaded_files))
             
         progress_bar.empty()
-        
-        if all_records:
-            df = pd.DataFrame(all_records)
+            
+        if all_data:
+            df = pd.DataFrame(all_data)
             df = df.fillna(0)
             
-            # --- Views ---
-            st.success("✅ Processing Complete!")
+            # --- কলাম সাজানো ---
+            # ফিক্সড কলাম
+            cols = list(df.columns)
+            fixed_cols = ["Color", "Order No"]
             
-            tab1, tab2 = st.tabs(["📌 Summary View (Color Wise)", "📋 Detailed Raw Data"])
+            # সাইজ কলামগুলো আলাদা করা
+            size_cols = [c for c in cols if c not in fixed_cols and c != "Total"]
             
-            with tab1:
-                st.subheader("Color & Order Summary")
-                # Dynamic Pivot
-                size_cols = [c for c in df.columns if c not in ['Order No', 'Color']]
-                
-                # Ensure all size columns are numeric INT32 (to prevent OverflowError in UI)
-                for col in size_cols:
-                    # errors='coerce' will turn bad strings to NaN, then fillna(0)
-                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('int32')
-
-                pivot_df = df.pivot_table(index=['Color', 'Order No'], values=size_cols, aggfunc='sum', fill_value=0)
-                st.dataframe(pivot_df, use_container_width=True)
-                
-            with tab2:
-                st.subheader("Extracted Raw Data")
-                st.dataframe(df, use_container_width=True)
-
-            # --- Excel Download ---
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Raw Data', index=False)
-                pivot_df.to_excel(writer, sheet_name='Color Wise View')
-                
-            buffer.seek(0)
+            # সাইজ সর্টিং (লজিক: বাচ্চারা আগে, তারপর বড়রা)
+            def sort_key(val):
+                order = ["3M", "6M", "9M", "12M", "18M", "2A", "3A", "4A", "5A", "6A", "8A", "10A", "12A", "XS", "S", "M", "L", "XL", "XXL", "3XL"]
+                return order.index(val) if val in order else 99
             
-            st.download_button(
-                label="📥 Download Excel Report",
-                data=buffer,
-                file_name="Order_Report_Professional.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            size_cols.sort(key=sort_key)
             
+            # ফাইনাল অর্ডার: Color -> Order No -> Sizes -> Total
+            final_cols = ["Color", "Order No"] + size_cols + ["Total"]
+            
+            # সেইফটি চেক: ডাটাফ্রেমে সব কলাম আছে কিনা
+            available_cols = [c for c in final_cols if c in df.columns]
+            df = df[available_cols]
+            
+            # সর্টিং: কালার আগে
+            if "Color" in df.columns and "Order No" in df.columns:
+                df = df.sort_values(by=["Color", "Order No"])
+            
+            # এক্সেল ডাউনলোড
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False)
+            excel_data = output.getvalue()
+            
+            st.success("✅ রিপোর্ট রেডি! নিচে ক্লিক করে ডাউনলোড করুন।")
+            st.download_button("📥 ডাউনলোড এক্সেল", data=excel_data, file_name="Final_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            
+            # প্রিভিউ টেবিল
+            st.dataframe(df)
         else:
-            st.warning("⚠️ No valid data found in the uploaded PDFs.")
+            st.warning("কোনো ডাটা পাওয়া যায়নি। সম্ভবত পিডিএফ ফরম্যাট মিলছে না।")
