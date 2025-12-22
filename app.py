@@ -17,7 +17,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==========================================
-#  HTML & CSS TEMPLATES
+#  HTML & CSS TEMPLATES (FINAL)
 # ==========================================
 
 INDEX_HTML = """
@@ -218,60 +218,26 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (RELAXED TABLE PARSING)
+#  LOGIC PART (TARGETED TABLE PARSING)
 # ==========================================
 
-def is_potential_size(header):
-    """
-    Checks if a header cell looks like a size.
-    Regex updated to handle spaces (e.g. '3 M') and various formats.
-    """
-    h = header.strip().upper()
-    # Bad keywords
-    if h in ["COLO", "SIZE", "TOTAL", "QUANTITY", "PRICE", "AMOUNT", "CURRENCY", "ORDER NO", "P.O NO", "COLOR"]:
-        return False
-    
-    # 1. Pure Digits (32, 34, 36)
-    if re.match(r'^\d+$', h): return True
-    
-    # 2. Digit + Letter (3M, 3 M, 4A, 4 A, 12Y)
-    if re.match(r'^\d+\s*[AMYT]$', h): return True
-    
-    # 3. Standard Text Sizes
-    if re.match(r'^(XXS|XS|S|M|L|XL|XXL|XXXL|TU|ONE\s*SIZE)$', h): return True
-    
-    return False
-
 def sort_sizes(size_list):
-    # Standard ordering list
     STANDARD_ORDER = [
         '0M', '1M', '3M', '6M', '9M', '12M', '18M', '24M', '36M',
         '2A', '3A', '4A', '5A', '6A', '8A', '10A', '12A', '14A', '16A', '18A',
         'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL',
         'TU', 'One Size'
     ]
-    
     def sort_key(s):
         s = s.strip()
-        # Remove spaces for sorting comparison (e.g., '3 M' -> '3M')
         s_clean = s.replace(' ', '')
-        
-        if s_clean in STANDARD_ORDER: 
-            return (0, STANDARD_ORDER.index(s_clean))
-        
-        # Try finding in standard order with relaxed matching
+        if s_clean in STANDARD_ORDER: return (0, STANDARD_ORDER.index(s_clean))
         for idx, std in enumerate(STANDARD_ORDER):
             if std == s_clean: return (0, idx)
-
-        # Digit sizes
         if s.isdigit(): return (1, int(s))
-        
-        # 3A, 4A types
         match = re.match(r'^(\d+)\s*([A-Z]+)$', s)
         if match: return (2, int(match.group(1)), match.group(2))
-        
         return (3, s)
-        
     return sorted(size_list, key=sort_key)
 
 def extract_metadata(first_page_text):
@@ -318,7 +284,7 @@ def extract_data_dynamic(file_path):
         reader = pypdf.PdfReader(file_path)
         first_page_text = reader.pages[0].extract_text()
         
-        # Booking File Logic: Extract metadata ONLY, do NOT extract table data from Booking file
+        # Booking File Check
         if "Main Fabric Booking" in first_page_text or "Fabric Booking Sheet" in first_page_text:
             metadata = extract_metadata(first_page_text)
             return [], metadata 
@@ -334,7 +300,7 @@ def extract_data_dynamic(file_path):
         
     except Exception as e: print(f"Meta error: {e}")
 
-    # 2. Table Extraction using pdfplumber (RELAXED MODE)
+    # 2. Table Extraction using pdfplumber (TARGETED)
     try:
         with pdfplumber.open(file_path) as pdf:
             for page in pdf.pages:
@@ -344,31 +310,28 @@ def extract_data_dynamic(file_path):
                     header_row_idx = -1
                     size_map = {} 
                     
-                    # 1. HEADER DETECTION (Relaxed)
+                    # === TARGETED HEADER DETECTION ===
+                    # Look for the specific table structure from the user's PDF:
+                    # It starts with "Colo/Size" (or similar) and ends with "Total"
                     for i, row in enumerate(table):
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
-                        potential_sizes = [c for c in clean_row if is_potential_size(c)]
                         
-                        # Logic:
-                        # - Must have at least 2 valid sizes
-                        # - OR must have 'Total' and at least 1 valid size
-                        # This covers cases where headers are messy
-                        if len(potential_sizes) >= 2:
+                        # Convert whole row to a single string for keyword search
+                        row_str = " ".join(clean_row).lower()
+                        
+                        # Logic: Look for "total" AND ("colo" or "size") in the header row
+                        if "total" in row_str and ("colo" in row_str or "size" in row_str):
                             header_row_idx = i
+                            # Map columns
                             for idx, cell in enumerate(clean_row):
-                                if is_potential_size(cell):
+                                # Map everything that isn't a known keyword as a size
+                                if cell and cell.lower() not in ["colo/size", "total", "color", "size"]:
                                     size_map[idx] = cell
                             break
-                        elif "Total" in clean_row and len(potential_sizes) >= 1:
-                             header_row_idx = i
-                             for idx, cell in enumerate(clean_row):
-                                if is_potential_size(cell):
-                                    size_map[idx] = cell
-                             break
                     
                     if header_row_idx == -1: continue
 
-                    # 2. DATA ROWS
+                    # 2. DATA ROWS PROCESSING
                     for row in table[header_row_idx+1:]:
                         clean_row = [str(cell).strip() if cell else '' for cell in row]
                         
@@ -376,13 +339,18 @@ def extract_data_dynamic(file_path):
                         
                         first_cell = clean_row[0].replace('\n', ' ').strip()
                         
-                        # Garbage Filters
+                        # === GARBAGE FILTERS ===
                         if not first_cell: continue
-                        if first_cell.startswith("XX") or "CM" in first_cell: continue 
-                        if re.match(r'^\d+$', first_cell): continue
-                        if "Total" in first_cell or "Grand Total" in first_cell: continue
+                        if first_cell.startswith("XX"): continue 
+                        if "CM" in first_cell: continue 
+                        if re.match(r'^\d+$', first_cell): continue # If it's just a number
                         
-                        color_name = re.sub(r'(Spec\. price|Total Quantity|Total Amount).*', '', first_cell, flags=re.IGNORECASE).strip()
+                        # Stop if we hit the footer totals
+                        if first_cell.lower().startswith("total"): continue
+                        
+                        # Clean Color Name (Remove "Spec. price" etc.)
+                        color_name = re.sub(r'(Spec\.?|price|Qty).*', '', first_cell, flags=re.IGNORECASE).strip()
+                        if not color_name: continue
                         
                         has_valid_qty = False
                         row_data_temp = []
@@ -390,6 +358,7 @@ def extract_data_dynamic(file_path):
                         for col_idx, size in size_map.items():
                             if col_idx < len(clean_row):
                                 qty_str = clean_row[col_idx]
+                                # Clean everything except digits
                                 qty_str = re.sub(r'[^\d]', '', qty_str)
                                 
                                 qty = 0
@@ -397,10 +366,7 @@ def extract_data_dynamic(file_path):
                                     qty = int(qty_str)
                                     if qty > 100000: qty = 0 # Sanity Check
                                 
-                                # We allow 0 qty to be added to keep structure if needed, 
-                                # but usually we only want rows with some data.
-                                # But if a color has 0 for a size, we MUST record 0.
-                                
+                                # CRITICAL: We record the 0s now because pdfplumber handles empty cells correctly
                                 row_data_temp.append({
                                     'P.O NO': order_no,
                                     'Color': color_name,
@@ -410,7 +376,6 @@ def extract_data_dynamic(file_path):
                                 
                                 if qty > 0: has_valid_qty = True
                         
-                        # Add rows only if the color has at least one valid quantity
                         if has_valid_qty:
                             extracted_data.extend(row_data_temp)
 
