@@ -82,13 +82,11 @@ RESULT_HTML = """
         body { background-color: #f8f9fa; padding: 30px 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .container { max-width: 1200px; }
         
-        /* Header Styles (Unchanged Size) */
         .company-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
         .company-name { font-size: 2.2rem; font-weight: 800; color: #2c3e50; text-transform: uppercase; letter-spacing: 1px; line-height: 1; }
         .report-title { font-size: 1.1rem; color: #555; font-weight: 600; text-transform: uppercase; margin-top: 5px; }
         .date-section { font-size: 1.2rem; font-weight: 800; color: #000; margin-top: 5px; }
         
-        /* Info Boxes (Text Size Increased +3pt approx) */
         .info-container { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 15px; }
         
         .info-box { 
@@ -109,7 +107,7 @@ RESULT_HTML = """
             color: white; 
             padding: 10px 15px; 
             border-radius: 5px; 
-            width: 240px; /* Width increased for bigger text */
+            width: 240px;
             text-align: right; 
             display: flex; 
             flex-direction: column; 
@@ -117,10 +115,9 @@ RESULT_HTML = """
             box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3); 
         }
         
-        /* Increased Font Size for Info Items */
         .info-item { 
             margin-bottom: 6px; 
-            font-size: 1.3rem; /* Increased (~13pt/14pt) */
+            font-size: 1.3rem;
             font-weight: 700; 
             white-space: nowrap; 
             overflow: hidden; 
@@ -133,14 +130,13 @@ RESULT_HTML = """
         .total-label { font-size: 1.1rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         .total-value { font-size: 2.5rem; font-weight: 800; line-height: 1.1; }
 
-        /* Table Styles */
         .table-card { background: white; border-radius: 0; margin-bottom: 20px; overflow: hidden; border: 1px solid #dee2e6; }
         
         .color-header { 
             background-color: #e9ecef; 
             color: #2c3e50; 
             padding: 10px 12px; 
-            font-size: 1.5rem; /* Increased Header Size */
+            font-size: 1.5rem;
             font-weight: 900; 
             border-bottom: 1px solid #dee2e6; 
             text-transform: uppercase;
@@ -148,27 +144,25 @@ RESULT_HTML = """
 
         .table { margin-bottom: 0; width: 100%; border-collapse: collapse; }
         
-        /* Table Header Cells (Bigger & Bolder) */
         .table th { 
             background-color: #2c3e50; 
             color: white; 
             font-weight: 900; 
-            font-size: 1.2rem; /* Increased (~13-14pt) */
+            font-size: 1.2rem;
             text-align: center; 
             border: 1px solid #34495e; 
             padding: 8px 4px; 
             vertical-align: middle; 
         }
         
-        /* Table Data Cells (Bigger & Bolder) */
         .table td { 
             text-align: center; 
             vertical-align: middle; 
             border: 1px solid #dee2e6; 
             padding: 6px 3px; 
             color: #000; 
-            font-weight: 800; /* Extra Bold */
-            font-size: 1.15rem; /* Increased (~13pt) */
+            font-weight: 800;
+            font-size: 1.15rem;
         }
         
         .table-striped tbody tr:nth-of-type(odd) { background-color: #f8f9fa; }
@@ -177,15 +171,14 @@ RESULT_HTML = """
         .total-col { font-weight: 900; background-color: #e8f6f3 !important; color: #16a085; border-left: 2px solid #1abc9c !important; }
         .total-col-header { background-color: #e8f6f3 !important; color: #000 !important; font-weight: 900 !important; border: 1px solid #34495e !important; }
 
-        /* SUMMARY ROW STYLES (Light Blue & Bold) */
         .table-striped tbody tr.summary-row,
         .table-striped tbody tr.summary-row td { 
             background-color: #d1ecff !important; 
             --bs-table-accent-bg: #d1ecff !important; 
             color: #000 !important;
-            font-weight: 900 !important; /* Extra Bold */
+            font-weight: 900 !important;
             border-top: 2px solid #aaa !important;
-            font-size: 1.2rem !important; /* Even Bigger for Summary */
+            font-size: 1.2rem !important;
         }
         
         .summary-label { text-align: right !important; padding-right: 15px !important; color: #000 !important; }
@@ -193,20 +186,16 @@ RESULT_HTML = """
         .action-bar { margin-bottom: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .btn-print { background-color: #2c3e50; color: white; border-radius: 50px; padding: 8px 30px; font-weight: 600; }
         
-        /* Footer Smaller (-1pt) */
         .footer-credit { 
             text-align: center; 
             margin-top: 30px; 
             margin-bottom: 20px; 
-            font-size: 0.8rem; /* Reduced Size (~9pt) */
+            font-size: 0.8rem;
             color: #2c3e50; 
             padding-top: 10px; 
             border-top: 1px solid #ddd; 
         }
 
-        /* =========================================
-           PRINT SPECIFIC STYLES
-           ========================================= */
         @media print {
             @page { margin: 5mm; size: portrait; }
             
@@ -222,7 +211,6 @@ RESULT_HTML = """
             .no-print { display: none !important; }
             
             .company-header { border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
-            /* Header Size Unchanged in Print */
             .company-name { font-size: 1.8rem; } 
             
             .info-container { margin-bottom: 10px; }
@@ -236,18 +224,15 @@ RESULT_HTML = """
             }
             .total-box { border: 2px solid #000 !important; background: white !important; color: black !important; padding: 5px 10px; }
             
-            /* Info Items Print Size (+3pt) */
             .info-item { font-size: 13pt !important; font-weight: 800 !important; }
             
-            /* Table Print Size (+3pt) */
             .table th, .table td { 
                 border: 1px solid #000 !important; 
                 padding: 2px !important; 
-                font-size: 13pt !important; /* ~3pt increased from standard 10pt */
+                font-size: 13pt !important;
                 font-weight: 800 !important;
             }
             
-            /* Summary Row Color Force */
             .table-striped tbody tr.summary-row td { 
                 background-color: #d1ecff !important; 
                 box-shadow: inset 0 0 0 9999px #d1ecff !important; 
@@ -258,7 +243,7 @@ RESULT_HTML = """
             .color-header { 
                 background-color: #f1f1f1 !important; 
                 border: 1px solid #000 !important; 
-                font-size: 1.4rem !important; /* Bigger */
+                font-size: 1.4rem !important;
                 font-weight: 900 !important;
                 padding: 5px;
                 margin-top: 10px;
@@ -273,13 +258,12 @@ RESULT_HTML = """
             
             .table-card { border: none; margin-bottom: 10px; break-inside: avoid; }
             
-            /* Footer Smaller */
             .footer-credit { 
                 display: block !important; 
                 color: black; 
                 border-top: 1px solid #000; 
                 margin-top: 10px; 
-                font-size: 8pt !important; /* Smaller */
+                font-size: 8pt !important;
             }
         }
     </style>
@@ -421,6 +405,97 @@ def extract_metadata(first_page_text):
     return meta
 
 
+def parse_vertical_table(lines, start_idx, sizes, order_no):
+    """
+    Vertical format table parse করে।
+    Pattern: Color name -> Spec. price -> (qty, price) pairs for each size -> Total
+    
+    ফাঁকা cell এ দুইটা consecutive empty/space line থাকে
+    """
+    extracted_data = []
+    i = start_idx
+    
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Total line এ থামি
+        if line.startswith("Total") and i + 1 < len(lines):
+            next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
+            if "Quantity" in next_line or "Amount" in next_line or re.match(r'^Quantity', next_line):
+                break
+            if re.match(r'^\d', next_line):  # Total এর পর numbers
+                break
+        
+        # Color name খুঁজি (alphabetic text যা keyword না)
+        if line and re.search(r'[a-zA-Z]', line):
+            # Skip keywords
+            if any(kw in line.lower() for kw in ['spec', 'price', 'total', 'quantity', 'amount']):
+                i += 1
+                continue
+            
+            # এটা color name
+            color_name = line
+            i += 1
+            
+            # Spec. price line skip করি
+            if i < len(lines) and 'spec' in lines[i].lower():
+                i += 1
+            
+            # এখন প্রতিটি size এর জন্য qty ও price পড়ি
+            quantities = []
+            size_idx = 0
+            
+            while size_idx < len(sizes) and i < len(lines):
+                qty_line = lines[i].strip() if i < len(lines) else ""
+                price_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
+                
+                # Check: এটা কি নতুন color বা Total?
+                if qty_line and re.search(r'[a-zA-Z]', qty_line):
+                    if not any(kw in qty_line.lower() for kw in ['spec', 'price']):
+                        # নতুন color শুরু হয়ে গেছে, বাকি sizes এ 0
+                        while size_idx < len(sizes):
+                            quantities.append(0)
+                            size_idx += 1
+                        break
+                
+                # ফাঁকা cell check (দুইটা empty line)
+                if (qty_line == "" or qty_line.isspace()) and (price_line == "" or price_line.isspace()):
+                    quantities.append(0)
+                    size_idx += 1
+                    i += 2  # দুইটা empty line skip
+                    continue
+                
+                # Quantity line (শুধু integer)
+                if re.match(r'^\d+$', qty_line):
+                    quantities.append(int(qty_line))
+                    size_idx += 1
+                    i += 2  # qty + price line skip
+                    continue
+                
+                # যদি কিছু match না করে
+                i += 1
+            
+            # Color এর data save করি
+            if quantities:
+                # যদি quantities কম থাকে, বাকিতে 0
+                while len(quantities) < len(sizes):
+                    quantities.append(0)
+                
+                for idx, size in enumerate(sizes):
+                    extracted_data.append({
+                        'P.O NO': order_no,
+                        'Color': color_name,
+                        'Size': size,
+                        'Quantity': quantities[idx] if idx < len(quantities) else 0
+                    })
+            
+            continue
+        
+        i += 1
+    
+    return extracted_data
+
+
 def extract_data_dynamic(file_path):
     extracted_data = []
     metadata = {
@@ -449,102 +524,24 @@ def extract_data_dynamic(file_path):
         for page in reader.pages:
             text = page.extract_text()
             lines = text.split('\n')
-            sizes = []
-            capturing_data = False
-            current_color = None
-            size_index = 0
-            expecting_qty = False
             
+            # Size header খুঁজি
             for i, line in enumerate(lines):
-                line_stripped = line.strip()
-                if not line_stripped: 
-                    # ফাঁকা line = ফাঁকা cell, যদি qty expect করছি তাহলে 0 বসাই
-                    if expecting_qty and current_color and size_index < len(sizes):
-                        extracted_data.append({
-                            'P.O NO': order_no,
-                            'Color': current_color,
-                            'Size': sizes[size_index],
-                            'Quantity': 0
-                        })
-                        size_index += 1
-                        # পরের line ও skip করি (0,00 price line)
-                    continue
-
-                # Size header line খুঁজি
-                if ("Colo" in line_stripped or "Size" in line_stripped) and "Total" in line_stripped:
-                    parts = line_stripped.split()
+                if ("Colo" in line or "Size" in line) and "Total" in line:
+                    parts = line.split()
                     try:
                         total_idx = [idx for idx, x in enumerate(parts) if 'Total' in x][0]
                         raw_sizes = parts[:total_idx]
-                        temp_sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
+                        sizes = [s for s in raw_sizes if s not in ["Colo", "/", "Size", "Colo/Size", "Colo/", "Size's"]]
                         
-                        valid_size_count = sum(1 for s in temp_sizes if is_potential_size(s))
-                        if temp_sizes and valid_size_count >= len(temp_sizes) / 2:
-                            sizes = temp_sizes
-                            capturing_data = True
-                        else:
-                            sizes = []
-                            capturing_data = False
-                    except: pass
-                    continue
-                
-                if capturing_data:
-                    # Total Quantity line এ থামি
-                    if line_stripped.startswith("Total") and ("Quantity" in line_stripped or "Amount" in line_stripped):
-                        capturing_data = False
-                        current_color = None
-                        expecting_qty = False
-                        continue
-                    
-                    # Price/Amount related lines skip করি
-                    if re.match(r'^[\d,\.]+$', line_stripped.replace(',', '.').replace(' ', '')):
-                        # এটা হয় qty অথবা price
-                        # যদি "," বা "." থাকে এবং decimal এর পর 2 digit থাকে, এটা price
-                        if re.match(r'^\d+[,\.]\d{2}$', line_stripped.replace(' ', '')):
-                            # এটা price (0,00 format), skip করি
-                            continue
-                        
-                        # এটা quantity
-                        if expecting_qty and current_color and size_index < len(sizes):
-                            try:
-                                qty = int(line_stripped)
-                                extracted_data.append({
-                                    'P.O NO': order_no,
-                                    'Color': current_color,
-                                    'Size': sizes[size_index],
-                                    'Quantity': qty
-                                })
-                                size_index += 1
-                            except:
-                                pass
-                        continue
-                    
-                    # Spec. price line skip করি
-                    if "Spec" in line_stripped or "price" in line_stripped.lower():
-                        continue
-                    
-                    # Color name detect করি (alphabetic text যা size বা keyword না)
-                    if re.search(r'[a-zA-Z]', line_stripped):
-                        clean_line = line_stripped.replace("Spec.", "").replace("price", "").strip()
-                        
-                        # এটা কি নতুন color?
-                        if not re.match(r'^[A-Z]\d+$', clean_line) and clean_line not in ["Assortment", "Spec", "price", "Total"]:
-                            # আগের color এর বাকি sizes এ 0 বসাই
-                            if current_color and size_index < len(sizes):
-                                while size_index < len(sizes):
-                                    extracted_data.append({
-                                        'P.O NO': order_no,
-                                        'Color': current_color,
-                                        'Size': sizes[size_index],
-                                        'Quantity': 0
-                                    })
-                                    size_index += 1
-                            
-                            # নতুন color শুরু
-                            current_color = clean_line
-                            size_index = 0
-                            expecting_qty = True
-                            continue
+                        valid_size_count = sum(1 for s in sizes if is_potential_size(s))
+                        if sizes and valid_size_count >= len(sizes) / 2:
+                            # Vertical table parse করি
+                            data = parse_vertical_table(lines, i + 1, sizes, order_no)
+                            extracted_data.extend(data)
+                    except: 
+                        pass
+                    break
                     
     except Exception as e: 
         print(f"Error processing file: {e}")
@@ -619,12 +616,10 @@ def index():
             pd.set_option('colheader_justify', 'center')
             table_html = pivot.to_html(classes='table table-bordered table-striped', index=False, border=0)
             
-            # Injections
             table_html = re.sub(r'<tr>\s*<td>', '<tr><td class="order-col">', table_html)
             table_html = table_html.replace('<th>Total</th>', '<th class="total-col-header">Total</th>')
             table_html = table_html.replace('<td>Total</td>', '<td class="total-col">Total</td>')
             
-            # Color Fix
             table_html = table_html.replace('<td>Actual Qty</td>', '<td class="summary-label">Actual Qty</td>')
             table_html = table_html.replace('<td>3% Order Qty</td>', '<td class="summary-label">3% Order Qty</td>')
             table_html = re.sub(r'<tr>\s*<td class="summary-label">', '<tr class="summary-row"><td class="summary-label">', table_html)
