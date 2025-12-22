@@ -1,5 +1,4 @@
-Flask
+streamlit
 pdfplumber
 pandas
-numpy
-gunicorn
+openpyxl
