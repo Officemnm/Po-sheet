@@ -838,7 +838,7 @@ RESULT_HTML = """
 """
 
 # ==========================================
-#  LOGIC PART (হুবহু আগের মতো)
+#  LOGIC PART
 # ==========================================
 
 def is_potential_size(header):
@@ -907,9 +907,62 @@ def extract_metadata(first_page_text):
     return meta
 
 
+def is_color_name(text):
+    """
+    Check if text is a valid color name (not a size, not a number, not a keyword)
+    """
+    text = text.strip()
+    if not text:
+        return False
+    
+    # শুধু number হলে color না
+    if re.match(r'^\d+$', text):
+        return False
+    
+    # Price format (0,00) হলে color না
+    if re.match(r'^\d+[,\.]\d{2}$', text):
+        return False
+    
+    # Size হলে color না
+    if is_potential_size(text):
+        return False
+    
+    # Keywords হলে color না
+    keywords = ['spec', 'price', 'total', 'quantity', 'amount', 'currency', 'order']
+    if any(kw in text.lower() for kw in keywords):
+        return False
+    
+    # Alphabetic character থাকতে হবে
+    if not re.search(r'[a-zA-Z]', text):
+        return False
+    
+    return True
+
+
+def is_partial_color_name(text):
+    """
+    Check if text might be a partial/continuation of color name
+    - শুধু alphabetic
+    - কোন number নেই
+    - keyword নয়
+    """
+    text = text.strip()
+    if not text:
+        return False
+    
+    # শুধু letters এবং space থাকলে partial color হতে পারে
+    if re.match(r'^[A-Za-z\s]+$', text):
+        keywords = ['spec', 'price', 'total', 'quantity', 'amount']
+        if not any(kw in text.lower() for kw in keywords):
+            return True
+    
+    return False
+
+
 def parse_vertical_table(lines, start_idx, sizes, order_no):
     """
     Vertical format table parse করে।
+    Multi-word color names handle করে (যেমন "Blanc Neig")
     """
     extracted_data = []
     i = start_idx
@@ -917,6 +970,7 @@ def parse_vertical_table(lines, start_idx, sizes, order_no):
     while i < len(lines):
         line = lines[i].strip()
         
+        # Total line এ থামি
         if line.startswith("Total") and i + 1 < len(lines):
             next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
             if "Quantity" in next_line or "Amount" in next_line or re.match(r'^Quantity', next_line):
@@ -924,17 +978,42 @@ def parse_vertical_table(lines, start_idx, sizes, order_no):
             if re.match(r'^\d', next_line):
                 break
         
-        if line and re.search(r'[a-zA-Z]', line):
-            if any(kw in line.lower() for kw in ['spec', 'price', 'total', 'quantity', 'amount']):
-                i += 1
-                continue
-            
+        # Color name খুঁজি
+        if line and is_color_name(line):
             color_name = line
             i += 1
             
+            # পরের line টাও color name এর অংশ কিনা check করি
+            # যদি পরের line "Spec. price" না হয় এবং partial color name হয়
+            while i < len(lines):
+                next_line = lines[i].strip()
+                
+                # যদি Spec. price হয়, color name শেষ
+                if 'spec' in next_line.lower():
+                    i += 1
+                    break
+                
+                # যদি number হয় (qty শুরু), color name শেষ
+                if re.match(r'^\d+$', next_line):
+                    break
+                
+                # যদি empty line হয়
+                if not next_line:
+                    i += 1
+                    continue
+                
+                # যদি partial color name হয়, join করি
+                if is_partial_color_name(next_line):
+                    color_name = color_name + " " + next_line
+                    i += 1
+                else:
+                    break
+            
+            # Spec. price line skip করি (যদি আগে skip না হয়ে থাকে)
             if i < len(lines) and 'spec' in lines[i].lower():
                 i += 1
             
+            # এখন প্রতিটি size এর জন্য qty ও price পড়ি
             quantities = []
             size_idx = 0
             
@@ -942,27 +1021,32 @@ def parse_vertical_table(lines, start_idx, sizes, order_no):
                 qty_line = lines[i].strip() if i < len(lines) else ""
                 price_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
                 
-                if qty_line and re.search(r'[a-zA-Z]', qty_line):
-                    if not any(kw in qty_line.lower() for kw in ['spec', 'price']):
-                        while size_idx < len(sizes):
-                            quantities.append(0)
-                            size_idx += 1
-                        break
+                # Check: এটা কি নতুন color বা Total?
+                if qty_line and is_color_name(qty_line):
+                    # নতুন color শুরু হয়ে গেছে, বাকি sizes এ 0
+                    while size_idx < len(sizes):
+                        quantities.append(0)
+                        size_idx += 1
+                    break
                 
+                # ফাঁকা cell check (দুইটা empty line)
                 if (qty_line == "" or qty_line.isspace()) and (price_line == "" or price_line.isspace()):
                     quantities.append(0)
                     size_idx += 1
                     i += 2
                     continue
                 
+                # Quantity line (শুধু integer)
                 if re.match(r'^\d+$', qty_line):
                     quantities.append(int(qty_line))
                     size_idx += 1
                     i += 2
                     continue
                 
+                # যদি কিছু match না করে
                 i += 1
             
+            # Color এর data save করি
             if quantities:
                 while len(quantities) < len(sizes):
                     quantities.append(0)
