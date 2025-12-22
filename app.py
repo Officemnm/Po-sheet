@@ -15,8 +15,8 @@ st.set_page_config(
 
 def clean_number(value):
     """
-    Clean numeric values.
-    Returns 0 if empty, invalid, or unreasonably large (prevents OverflowError).
+    Clean numeric values with STRICT limits.
+    Returns 0 if empty, invalid, or unreasonably large.
     """
     if value is None or value == "":
         return 0
@@ -24,13 +24,19 @@ def clean_number(value):
         # শুধুমাত্র সংখ্যা রাখা
         clean_str = re.sub(r'[^\d]', '', str(value))
         
-        # Safety Check: যদি কোনো সংখ্যা ৯ ডিজিটের বেশি হয় (১০০,০০০,০০০ এর উপরে),
-        # তাহলে এটি সম্ভবত কোনো বারকোড বা ফোন নম্বর, কোয়ান্টিটি নয়।
-        # এটি OverflowError আটকাবে।
-        if not clean_str or len(clean_str) > 9:
+        # STRICT SAFETY CHECK:
+        # 1. যদি ফাঁকা হয় -> 0
+        # 2. যদি ৬ ডিজিটের বেশি হয় (মানে ৯,৯৯,৯৯৯ এর বেশি) -> 0 (বারকোড/ভুল ডাটা এড়াতে)
+        if not clean_str or len(clean_str) > 6:
             return 0
             
-        return int(clean_str)
+        val = int(clean_str)
+        # অতিরিক্ত সেফটি: ১০,০০০ এর বেশি কোয়ান্টিটি এক সাইজে অস্বাভাবিক, 
+        # তবুও যদি বড় অর্ডার হয় তাই লিমিট ১,০০,০০০ রাখা হলো। এর বেশি হলে বাদ।
+        if val > 100000: 
+            return 0
+            
+        return val
     except ValueError:
         return 0
 
@@ -41,7 +47,7 @@ def clean_color_name(text):
     text = str(text).replace('\n', ' ')
     # অপ্রয়োজনীয় শব্দ বাদ দেওয়া
     text = text.replace("Spec. price", "").replace("Total Quantity", "").replace("Main purchase price", "")
-    # স্পেশাল ক্যারেক্টার ক্লিন করা
+    # স্পেশাল ক্যারেক্টার ক্লিন করা (শুধুমাত্র অক্ষর, সংখ্যা, হাইফেন ও স্পেস রাখা)
     text = re.sub(r'[^\w\s-]', '', text) 
     return re.sub(' +', ' ', text).strip()
 
@@ -55,6 +61,7 @@ def process_pdf_file(uploaded_file):
             # 1. Extract Order No (Page 1)
             if len(pdf.pages) > 0:
                 p1_text = pdf.pages[0].extract_text() or ""
+                # Order no প্যাটার্ন খোঁজা
                 order_match = re.search(r'Order no[:\s]+(\d+)', p1_text, re.IGNORECASE)
                 if order_match:
                     order_no = order_match.group(1)
@@ -74,10 +81,12 @@ def process_pdf_file(uploaded_file):
                         # None ভ্যালু হ্যান্ডেল করা
                         row_text = [str(x) if x else "" for x in row]
                         
+                        # কলাম হেডার ডিটেকশন (Colo বা Size শব্দ খুঁজবে)
                         if any("Colo" in col or "Size" in col for col in row_text):
                             header_row_index = i
                             for col_idx, col_name in enumerate(row_text):
                                 c_name = col_name.replace('\n', ' ').strip()
+                                # হেডার থেকে অপ্রয়োজনীয় কলাম বাদ দেওয়া
                                 if c_name and "Colo" not in c_name and "Total" not in c_name and "Spec" not in c_name:
                                     size_columns.append({'index': col_idx, 'name': c_name})
                             break
@@ -92,20 +101,33 @@ def process_pdf_file(uploaded_file):
                         row = table[i]
                         first_col = row[0] if row[0] else ""
                         
-                        # --- CRITICAL FIX: SKIP TOTAL/SUMMARY ROWS ---
-                        # প্রথম কলামে যদি Total, Amount, Assortment লেখা থাকে, তবে সেই লাইন বাদ।
-                        # এটি উল্টাপাল্টা ডাটা এবং ডাবল কাউন্টিং আটকাবে।
-                        first_col_lower = str(first_col).lower()
-                        if any(x in first_col_lower for x in ['total', 'amount', 'assortment', 'qty', 'quantity', 'price', 'main purchase']):
+                        # --- STRICT FILTERING (গারবেজ ডাটা আটকানোর জন্য) ---
+                        
+                        # ১. পুরো রো-এর সব টেক্সট চেক করা
+                        row_full_text = " ".join([str(x).lower() for x in row if x])
+                        
+                        # ২. যদি রো-তে Total, Amount, Price, Assortment থাকে -> SKIP
+                        if any(bad_word in row_full_text for bad_word in ['total', 'amount', 'assortment', 'main purchase', 'currency']):
+                            # এখানে current_color রিসেট করা ভালো, যাতে পরের লাইনে ভুল করে আগের কালার না ধরে
+                            current_color = None 
                             continue
                         
                         temp_color = clean_color_name(first_col)
                         
-                        # Logic to identify color row vs data row
-                        # কালার ডিটেকশন: যদি টেক্সট থাকে এবং সেটি সংখ্যা না হয়
+                        # ৩. কালার ডিটেকশন লজিক
+                        # যদি টেক্সট থাকে এবং সেটি সংখ্যা না হয়
                         if temp_color and not any(char.isdigit() for char in temp_color):
                             current_color = temp_color
+                        elif not temp_color and current_color:
+                            # যদি কালার সেল ফাঁকা থাকে, আমরা আগের কালার ধরব কি না?
+                            # সাধারণত কোয়ান্টিটি টেবিলের মাঝখানে ফাঁকা রো থাকে না।
+                            # তাই যদি কোনো সংখ্যা না পাওয়া যায়, তবে স্কিপ করা ভালো।
+                            pass
+                        elif not temp_color and not current_color:
+                            # কালারও নেই, আগের কালারও নেই -> স্কিপ
+                            continue
 
+                        # ডাটা এক্সট্রাকশন
                         row_has_data = False
                         row_data = {'Order No': order_no, 'Color': current_color}
                         
@@ -121,8 +143,10 @@ def process_pdf_file(uploaded_file):
                             else:
                                 row_data[col_info['name']] = 0
                         
+                        # ডাটা অ্যাড করা (যদি ভ্যালিড কালার থাকে এবং অন্তত একটি সাইজের ভ্যালিড কোয়ান্টিটি থাকে)
                         if row_has_data and current_color:
                              extracted_data.append(row_data)
+
     except Exception as e:
         st.error(f"Error processing file: {e}")
         
@@ -175,9 +199,10 @@ if uploaded_files:
                 # Dynamic Pivot
                 size_cols = [c for c in df.columns if c not in ['Order No', 'Color']]
                 
-                # Ensure all size columns are numeric to prevent Arrow errors
+                # Ensure all size columns are numeric INT32 (to prevent OverflowError in UI)
                 for col in size_cols:
-                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+                    # errors='coerce' will turn bad strings to NaN, then fillna(0)
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype('int32')
 
                 pivot_df = df.pivot_table(index=['Color', 'Order No'], values=size_cols, aggfunc='sum', fill_value=0)
                 st.dataframe(pivot_df, use_container_width=True)
