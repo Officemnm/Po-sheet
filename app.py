@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string
+ from flask import Flask, request, render_template_string
 import pypdf
 import pandas as pd
 import os
@@ -383,12 +383,12 @@ RESULT_HTML = """
             border-left: 2px solid #a7f3d0 !important;
         }
 
-        /* ===== SUMMARY ROWS - আরো Eye-Catching ===== */
+        /* ===== SUMMARY ROWS - Font বড় ও বোল্ড করা হয়েছে ===== */
         .table tbody tr.summary-row td { 
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
             color: #92400e !important;
             font-weight: 800 !important;
-            font-size: 0.95rem !important;
+            font-size: 1.0rem !important;  /* 0.95 থেকে 1.0rem করা হয়েছে */
             border-top: 3px solid #f59e0b !important;
             border-bottom: 1px solid #fbbf24 !important;
             padding: 14px 10px !important;
@@ -397,6 +397,8 @@ RESULT_HTML = """
         .table tbody tr.summary-row:last-child td {
             background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
             color: #1e40af !important;
+            font-weight: 800 !important;
+            font-size: 1.0rem !important;  /* 0.95 থেকে 1.0rem করা হয়েছে */
             border-top: 3px solid #3b82f6 !important;
             border-bottom: none !important;
         }
@@ -404,9 +406,10 @@ RESULT_HTML = """
         .summary-label { 
             text-align: right !important;
             padding-right: 20px !important;
-            font-size: 0.8rem !important;
+            font-size: 0.85rem !important;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 800 !important;
         }
 
         /* ===== ACTION BAR ===== */
@@ -569,8 +572,10 @@ RESULT_HTML = """
                 color: #000 !important;
             }
             
+            /* Print এ Summary rows - Font বড় ও বোল্ড */
             .summary-row td {
-                font-size: 10pt !important;
+                font-size: 10.5pt !important;  /* 10pt থেকে 10.5pt করা হয়েছে */
+                font-weight: 800 !important;
                 border-top: 2px solid #000 !important;
             }
             
