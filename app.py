@@ -18,139 +18,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # ==========================================
 #  HTML & CSS TEMPLATES
 # ==========================================
-
-INDEX_HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PO Report Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        body { 
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .main-card { 
-            border: none; 
-            border-radius: 16px; 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
-            background: #ffffff;
-            overflow: hidden;
-            max-width: 480px;
-            width: 100%;
-        }
-        .card-header { 
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            color: white; 
-            padding: 35px 40px;
-            text-align: center;
-        }
-        .card-header h2 { 
-            font-weight: 700; 
-            font-size: 1.5rem;
-            margin-bottom: 6px;
-            letter-spacing: -0.5px;
-        }
-        .card-header p {
-            opacity: 0.7;
-            font-weight: 400;
-            font-size: 0.9rem;
-            margin: 0;
-        }
-        .btn-upload { 
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border: none; 
-            padding: 14px 40px; 
-            font-weight: 600; 
-            font-size: 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-        }
-        .btn-upload:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
-        }
-        .file-input-wrapper { 
-            border: 2px dashed #d1d5db; 
-            border-radius: 12px; 
-            padding: 40px 30px; 
-            background: #f9fafb;
-            transition: all 0.3s ease;
-        }
-        .file-input-wrapper:hover { 
-            border-color: #3b82f6; 
-            background: #eff6ff;
-        }
-        .file-input-wrapper h5 {
-            font-weight: 600;
-            color: #1e293b;
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-        }
-        .file-input-wrapper p {
-            color: #64748b;
-            font-size: 0.85rem;
-        }
-        .form-control {
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-        }
-        .form-control:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-        .footer-credit { 
-            margin-top: 25px; 
-            font-size: 0.8rem; 
-            color: #94a3b8;
-        }
-        .footer-credit strong {
-            color: #3b82f6;
-        }
-    </style>
-</head>
-<body>
-    <div class="container py-4">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="card main-card mx-auto">
-                    <div class="card-header">
-                        <h2>PDF Report Generator</h2>
-                        <p>Cotton Clothing BD Limited</p>
-                    </div>
-                    <div class="card-body p-4">
-                        <form action="/" method="post" enctype="multipart/form-data">
-                            <div class="file-input-wrapper mb-4 text-center">
-                                <h5>Upload PDF Files</h5>
-                                <p class="mb-3">Select Booking & PO files together</p>
-                                <input class="form-control" type="file" name="pdf_files" multiple accept=".pdf" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-upload w-100">
-                                Generate Report
-                            </button>
-                        </form>
-                        <div class="footer-credit text-center">
-                            Developed by <strong>Mehedi Hasan</strong>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
 RESULT_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -174,8 +41,6 @@ RESULT_HTML = """
             --gray-800: #1e293b;
             --success: #059669;
             --success-light: #d1fae5;
-            --warning: #d97706;
-            --warning-light: #fef3c7;
         }
         
         * { font-family: 'Inter', sans-serif; }
@@ -188,7 +53,6 @@ RESULT_HTML = """
         
         .container { max-width: 1200px; }
         
-        /* ===== HEADER ===== */
         .company-header { 
             background: white;
             border-radius: 12px;
@@ -220,9 +84,7 @@ RESULT_HTML = """
             letter-spacing: 1px;
         }
         
-        .date-box {
-            text-align: right;
-        }
+        .date-box { text-align: right; }
         
         .date-label {
             font-size: 0.7rem;
@@ -238,7 +100,6 @@ RESULT_HTML = """
             color: var(--dark);
         }
         
-        /* ===== INFO SECTION ===== */
         .info-section {
             display: grid;
             grid-template-columns: 1fr 220px;
@@ -263,7 +124,6 @@ RESULT_HTML = """
             border-left: 3px solid var(--primary-light);
         }
         
-        /* Booking Item Highlight */
         .info-item.booking-highlight {
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             border-left: 4px solid #f59e0b;
@@ -324,7 +184,6 @@ RESULT_HTML = """
             font-weight: 500;
         }
 
-        /* ===== TABLE ===== */
         .table-card { 
             background: white;
             border-radius: 12px;
@@ -343,10 +202,7 @@ RESULT_HTML = """
             letter-spacing: 1px;
         }
 
-        .table { 
-            margin-bottom: 0; 
-            width: 100%;
-        }
+        .table { margin-bottom: 0; width: 100%; }
         
         .table th { 
             background: var(--gray-100);
@@ -370,9 +226,7 @@ RESULT_HTML = """
             border-bottom: 1px solid var(--gray-200);
         }
         
-        .table tbody tr:hover td {
-            background: var(--gray-50);
-        }
+        .table tbody tr:hover td { background: var(--gray-50); }
         
         .order-col { 
             font-weight: 800 !important;
@@ -395,7 +249,6 @@ RESULT_HTML = """
             border-left: 2px solid #a7f3d0 !important;
         }
 
-        /* ===== SUMMARY ROWS ===== */
         .table tbody tr.summary-row td { 
             background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
             color: #92400e !important;
@@ -424,7 +277,6 @@ RESULT_HTML = """
             font-weight: 800 !important;
         }
 
-        /* ===== ACTION BAR ===== */
         .action-bar { 
             margin-bottom: 20px;
             display: flex;
@@ -464,10 +316,8 @@ RESULT_HTML = """
         .btn-print:hover {
             background: var(--primary-light);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
         }
         
-        /* ===== FOOTER ===== */
         .footer-credit { 
             text-align: center;
             margin-top: 30px;
@@ -479,16 +329,11 @@ RESULT_HTML = """
             color: var(--gray-600);
         }
         
-        .footer-credit strong {
-            color: var(--primary);
-        }
+        .footer-credit strong { color: var(--primary); }
 
-        /* ===== PRINT ===== */
+        /* ===== PRINT STYLES ===== */
         @media print {
-            @page { 
-                margin: 10mm;
-                size: portrait;
-            }
+            @page { margin: 10mm; size: portrait; }
             
             body { 
                 background: white !important;
@@ -497,11 +342,7 @@ RESULT_HTML = """
                 print-color-adjust: exact !important;
             }
             
-            .container { 
-                max-width: 100% !important;
-                padding: 0 !important;
-            }
-            
+            .container { max-width: 100% !important; padding: 0 !important; }
             .no-print { display: none !important; }
             
             .company-header {
@@ -513,13 +354,9 @@ RESULT_HTML = """
                 padding: 15px 20px !important;
             }
             
-            .company-name {
-                font-size: 1.3rem !important;
-            }
+            .company-name { font-size: 1.3rem !important; }
             
-            .info-section {
-                margin-bottom: 10px !important;
-            }
+            .info-section { margin-bottom: 10px !important; }
             
             .info-grid {
                 border-radius: 0 !important;
@@ -530,11 +367,30 @@ RESULT_HTML = """
             
             .info-item {
                 border-left: 3px solid #000 !important;
+                background: white !important;
             }
             
+            /* ===== BOOKING HIGHLIGHT FOR PRINT - EXTRA BOLD ===== */
             .info-item.booking-highlight {
-                background: #fff8dc !important;
-                border-left: 4px solid #000 !important;
+                background: white !important;
+                border: 3px solid #000 !important;
+                border-left: 6px solid #000 !important;
+                box-shadow: none !important;
+                padding: 14px 16px !important;
+            }
+            
+            .info-item.booking-highlight .info-label {
+                font-weight: 900 !important;
+                font-size: 10pt !important;
+                text-decoration: underline !important;
+                color: #000 !important;
+            }
+            
+            .info-item.booking-highlight .info-value {
+                font-weight: 900 !important;
+                font-size: 13pt !important;
+                color: #000 !important;
+                letter-spacing: 0.5px !important;
             }
             
             .grand-total-box {
@@ -545,9 +401,7 @@ RESULT_HTML = """
                 color: #000 !important;
             }
             
-            .grand-total-box * {
-                color: #000 !important;
-            }
+            .grand-total-box * { color: #000 !important; }
             
             .table-card {
                 border-radius: 0 !important;
@@ -576,6 +430,7 @@ RESULT_HTML = """
                 font-size: 10pt !important;
                 padding: 8px 6px !important;
                 border: 1px solid #000 !important;
+                color: #000 !important;
             }
             
             .order-col {
@@ -583,8 +438,7 @@ RESULT_HTML = """
                 color: #000 !important;
             }
             
-            .total-col,
-            .total-col-header {
+            .total-col, .total-col-header {
                 background: #e8f5e9 !important;
                 color: #000 !important;
             }
@@ -1030,3 +884,4 @@ def index():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
+
